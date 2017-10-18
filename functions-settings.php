@@ -21,7 +21,7 @@ $pickplugins_wl_settings_options = array(
 					'title'		=> __('Wishlist Page','woo-wishlist'),
 					'details'	=> __('Users will able to view their wishlists','woo-wishlist')." Use shortcode [pickplugins_wl_wishlist] on that page",
 					'type'		=> 'select',
-					'args'		=> pickplugins_wl_get_wishlist_pages(),
+					'args'		=> array(),
 				),
 			)
 		),
@@ -69,14 +69,5 @@ $Pick_settings = new Pick_settings( $args );
 		
 
 		
-function pickplugins_wl_get_wishlist_pages(){
-	
-	$pages_array = array( '' => __( 'Select Page', 'woo-wishlist' ) );
-	
-	foreach( get_pages() as $page ):
-		$pages_array[ $page->ID ] = $page->post_title;
-	endforeach;
-	
-	return $pages_array;
-}
+
 
