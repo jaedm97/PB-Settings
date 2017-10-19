@@ -121,6 +121,50 @@ $args = array(
 $Pick_settings = new Pick_settings( $args );
 ```
 
+#### Add More Pages
+```php
+$setting_page_2 = array(
+
+	'page_nav' 	=> __( 'Page 2', 'text-domain' ),
+	'page_settings' => array(
+		
+		'p2_section_1' => array(
+			'title' 	=> 	__('Page 2 Section 1','text-domain'),
+			'description' 	=> __('Description of page 2 section 1','text-domain'),
+			'options' 	=> array(
+				array(
+					'id'		=> 'select_field_2',
+					'title'		=> __('Select field','text-domain'),
+					'details'	=> __('Description of select field','text-domain'),
+					'type'		=> 'select',
+					'args'		=> array(
+						'option_1'	=> __('Option 1','text-domain'),
+						'option_2'	=> __('Option 2','text-domain'),
+					),
+				),
+			)
+		),
+	),
+);
+
+$args = array(
+	'add_in_menu'     => true,
+	'menu_type'       => 'main',
+	'menu_title'      => __( 'My Settings', 'text-domain' ),
+	'page_title'      => __( 'My Settings', 'text-domain' ),
+	'menu_page_title' => __( 'My Settings Page', 'text-domain' ),
+	'capability'      => "manage_options",
+	'menu_slug'       => "my-settings",
+	'menu_icon'       => "dashicons-hammer",
+	'pages' 	  => array(
+		'setting_page_1' => $setting_page_1,
+		'setting_page_2' => $setting_page_2,
+	),
+);
+
+$Pick_settings = new Pick_settings( $args );
+```
+
 #### Add submenu under any main menu
 ```php
 $sub_args = array(
