@@ -2,7 +2,7 @@
 An easy option and settigns management framwork for WordPress, Developer friendly and elegant look build with native WordPress UI,  
 
 ### How to use
-`
+```php
 include "class-pick-settings.php";
 
 $args = array(
@@ -17,5 +17,4 @@ $args = array(
 );
 
 $Pick_settings = new Pick_settings( $args );
-
-`
+```
