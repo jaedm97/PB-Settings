@@ -126,6 +126,7 @@ class Pick_settings {
 		
 		$id 	= isset( $option['id'] ) ? $option['id'] : "";
 		$args 	= isset( $option['args'] ) ? $option['args'] : array();	
+		$args	= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
 		$value	= get_option( $id );
 		
 		echo "<select name='$id' id='$id'>";
@@ -140,6 +141,7 @@ class Pick_settings {
 		
 		$id				= isset( $option['id'] ) ? $option['id'] : "";
 		$args			= isset( $option['args'] ) ? $option['args'] : array();
+		$args			= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
 		$option_value	= get_option( $id );
 		
 		echo "<fieldset>";
@@ -156,6 +158,7 @@ class Pick_settings {
 		
 		$id				= isset( $option['id'] ) ? $option['id'] : "";
 		$args			= isset( $option['args'] ) ? $option['args'] : array();
+		$args			= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
 		$option_value	= get_option( $id );
 		
 		echo "<fieldset>";
@@ -219,6 +222,27 @@ class Pick_settings {
 	
 		echo "</div>";		
 	}
+	
+	
+	// Default Functions
+	
+	public function generate_args_from_string( $string ){
+		
+		switch( $string ){
+			case "PICK_PAGES_ARRAY" : return $this->get_pages_array();
+			
+			default : return array();
+		}
+	}
+	
+	public function get_pages_array(){
+		
+		$pages_array = array();
+		foreach( get_pages() as $page ) $pages_array[ $page->ID ] = $page->post_title;
+		
+		return apply_filters( 'FILTER_PICK_PAGES_ARRAY', $pages_array );
+	}
+	
 	
 	// Get Data from Dataset //
 	
