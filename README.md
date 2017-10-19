@@ -229,8 +229,17 @@ $Pick_settings_sub = new Pick_settings( $sub_args );
 
 ### Screenshots
 
+#### Add main menu
 ![alt text](https://github.com/jaedm97/Pick-Settings/blob/master/screenshots/add-main-menu.png "Add main menu")
+
+#### Add options to main menu
 ![alt text](https://github.com/jaedm97/Pick-Settings/blob/master/screenshots/add-options-to-main-menu.png "Add options to main menu")
+
+#### Add another page
 ![alt text](https://github.com/jaedm97/Pick-Settings/blob/master/screenshots/add-another-page.png "Add another page")
+
+#### Add sub menu
 ![alt text](https://github.com/jaedm97/Pick-Settings/blob/master/screenshots/add-sub-menu.png "Add sub menu")
+
+#### Add options to sub menu
 ![alt text](https://github.com/jaedm97/Pick-Settings/blob/master/screenshots/add-options-to-sub-menu.png "Add options to sub menu")
