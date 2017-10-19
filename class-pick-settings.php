@@ -1,4 +1,4 @@
-<?php	
+<?php
 /*
 * @Author 		PickPlugins
 * Copyright: 	2015 PickPlugins.com
@@ -13,24 +13,26 @@ class Pick_settings {
 	
 	public $data = array();
 	
+	
     public function __construct( $args ){
 		
 		$this->data = &$args;
-		
+	
 		if( $this->add_in_menu() ) {
 			add_action( 'admin_menu', array( $this, 'add_menu_in_admin_menu' ), 12 );
 		}
+		
 		add_action( 'admin_init', array( $this, 'pick_settings_display_fields' ), 12 );
 		add_filter( 'whitelist_options', array( $this, 'pick_settings_whitelist_options' ), 99, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'pick_enqueue_color_picker' ) );
-		
-    }
+	}
 	
 	public function add_menu_in_admin_menu() {
 		
 		if( "main" == $this->get_menu_type() ) {
 			add_menu_page( $this->get_menu_name(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ), $this->get_menu_icon() );
 		}
+		
 		if( "submenu" == $this->get_menu_type() ) {
 			add_submenu_page( $this->get_parent_slug(), $this->get_page_title(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ) );
 		}
@@ -70,14 +72,14 @@ class Pick_settings {
 		
 		if( isset($option['type']) && $option['type'] === 'select' ) 		$this->pick_settings_generate_select( $option );
 		elseif( isset($option['type']) && $option['type'] === 'checkbox')	$this->pick_settings_generate_checkbox( $option );
+		elseif( isset($option['type']) && $option['type'] === 'radio')		$this->pick_settings_generate_radio( $option );
 		elseif( isset($option['type']) && $option['type'] === 'textarea')	$this->pick_settings_generate_textarea( $option );
 		elseif( isset($option['type']) && $option['type'] === 'number' ) 	$this->pick_settings_generate_number( $option );
 		elseif( isset($option['type']) && $option['type'] === 'text' ) 		$this->pick_settings_generate_text( $option );
-		elseif( isset($option['type']) && $option['type'] === 'colorpicker') $this->pick_settings_generate_colorpicker( $option );
-		
+		elseif( isset($option['type']) && $option['type'] === 'colorpicker')$this->pick_settings_generate_colorpicker( $option );
+
 		elseif( isset($option['type']) && $option['type'] === 'custom' ) 	do_action( "pick_settings_action_custom_field_$id", $option );
-		
-		
+
 		if( !empty( $details ) ) echo "<p class='description'>$details</p>";
 	}
 
@@ -122,12 +124,9 @@ class Pick_settings {
 	
 	public function pick_settings_generate_select( $option ){
 		
-		$id = isset( $option['id'] ) ? $option['id'] : "";
-		$args = isset( $option['args'] ) ? $option['args'] : array();
-		
-		// echo "<pre>"; print_r( $option ); echo "</pre>";
-		
-		$value 	 = get_option( $id );
+		$id 	= isset( $option['id'] ) ? $option['id'] : "";
+		$args 	= isset( $option['args'] ) ? $option['args'] : array();	
+		$value	= get_option( $id );
 		
 		echo "<select name='$id' id='$id'>";
 		foreach( $args as $key => $name ):
@@ -145,9 +144,25 @@ class Pick_settings {
 		
 		echo "<fieldset>";
 		foreach( $args as $key => $value ):
-		
+
 			$checked = is_array( $option_value ) && in_array( $key, $option_value ) ? "checked" : "";
 			echo "<label for='$id-$key'><input name='{$id}[]' type='checkbox' id='$id-$key' value='$key' $checked>$value</label><br>";
+			
+		endforeach;
+		echo "</fieldset>";
+	}
+		
+	public function pick_settings_generate_radio( $option ){
+		
+		$id				= isset( $option['id'] ) ? $option['id'] : "";
+		$args			= isset( $option['args'] ) ? $option['args'] : array();
+		$option_value	= get_option( $id );
+		
+		echo "<fieldset>";
+		foreach( $args as $key => $value ):
+
+			$checked = is_array( $option_value ) && in_array( $key, $option_value ) ? "checked" : "";
+			echo "<label for='$id-$key'><input name='{$id}[]' type='radio' id='$id-$key' value='$key' $checked>$value</label><br>";
 			
 		endforeach;
 		echo "</fieldset>";
@@ -207,6 +222,21 @@ class Pick_settings {
 	
 	// Get Data from Dataset //
 	
+	public function get_option_ids(){
+		
+		$option_ids = array();
+		foreach( $this->get_pages() as $page ):
+			$setting_sections = isset( $page['page_settings'] ) ? $page['page_settings'] : array();
+			foreach( $setting_sections as $setting_section ):
+		
+				$options = isset( $setting_section['options'] ) ? $setting_section['options'] : array();
+				foreach( $options as $option ) $option_ids[] = isset( $option['id'] ) ? $option['id'] : '';
+				
+			endforeach;
+		endforeach;
+		return $option_ids; 
+	}
+	
 	public function get_current_page(){
 		
 		$all_pages 		= $this->get_pages();
@@ -246,6 +276,10 @@ class Pick_settings {
 	private function get_menu_page_title(){
 		if( isset( $this->data['menu_page_title'] ) ) return $this->data['menu_page_title'];
 		else return "My Custom Menu";
+	}
+	private function get_menu_name(){
+		if( isset( $this->data['menu_name'] ) ) return $this->data['menu_name'];
+		else return "Menu Name";
 	}
 	private function get_menu_title(){
 		if( isset( $this->data['menu_title'] ) ) return $this->data['menu_title'];
