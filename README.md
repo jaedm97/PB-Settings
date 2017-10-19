@@ -24,7 +24,7 @@ $args = array(
 $Pick_settings = new Pick_settings( $args );
 ```
 
-#### Write your options in the format below
+#### Design options for your menu
 ```php
 $setting_page_1 = array(
 
@@ -102,7 +102,7 @@ $setting_page_1 = array(
 );
 ```
 
-#### Add your options `$setting_page_1` to the Menu
+#### Add options `$setting_page_1` to your mainmenu
 ```php
 $args = array(
 	'add_in_menu'     => true,
@@ -132,6 +132,51 @@ $sub_args = array(
 	'capability' => "manage_options",
 	'menu_slug' => "my-sub-settings",
 	'parent_slug' => "my-settings",
+);
+
+$Pick_settings_sub = new Pick_settings( $sub_args );
+```
+
+#### Design options for your submenu
+```php
+$sub_setting_page_1 = array(
+
+	'page_nav' 	=> __( 'Sub Menu Page 1', 'text-domain' ),
+	'page_settings' => array(
+		
+		'sp1_section_1' => array(
+			'title' 	=> 	__('Section 1','text-domain'),
+			'description' 	=> __('Description of section 1','text-domain'),
+			'options' 	=> array(
+				array(
+					'id'		=> 'sub_select_field',
+					'title'		=> __('Select field','text-domain'),
+					'details'	=> __('Description of select field','text-domain'),
+					'type'		=> 'select',
+					'args'		=> array(
+						'option_1'	=> __('Option 1','text-domain'),
+						'option_2'	=> __('Option 2','text-domain'),
+					),
+				),				
+			)
+		),
+	),
+);
+```
+#### Add options `$sub_setting_page_1` to your submenu
+```php
+$sub_args = array(
+	'add_in_menu'     => true,
+	'menu_type'       => 'submenu',
+	'menu_title'      => __( 'My Settings', 'text-domain' ),
+	'page_title'      => __( 'My Settings', 'text-domain' ),
+	'menu_page_title' => __( 'My Settings Page', 'text-domain' ),
+	'capability'      => "manage_options",
+	'menu_slug'       => "my-settings",
+	'menu_icon'       => "dashicons-hammer",
+	'pages' 	  => array(
+		'sub_setting_page_1' => $sub_setting_page_1,
+	),
 );
 
 $Pick_settings_sub = new Pick_settings( $sub_args );
