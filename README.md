@@ -3,7 +3,7 @@ An easy option and settigns management framwork for WordPress, Developer friendl
 
 ### How to use
 
-#### Adding Pick_Settings class file
+#### Adding Pick_settings class file
 ```php
 include "class-pick-settings.php";
 ```
