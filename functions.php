@@ -3,13 +3,13 @@ include "class-pick-settings.php";
 
 $setting_page_1 = array(
 
-	'page_nav' => __( 'Page 1', 'text-domain' ),
+	'page_nav'	=> __( 'Page 1', 'text-domain' ),
 	'page_settings' => array(
 		
 		'section_1'	=> array(
-			'title' 		=> 	__('Section 1','text-domain'),
+			'title' 	=> 	__('Section 1','text-domain'),
 			'description' 	=> __('Description of section 1','text-domain'),
-			'options' 		=> array(
+			'options' 	=> array(
 				array(
 					'id'		=> 'select_field',
 					'title'		=> __('Select field','text-domain'),
@@ -50,9 +50,9 @@ $setting_page_1 = array(
 		),
 		
 		'section_2'	=> array(
-			'title' 		=> 	__('Section 2','text-domain'),
+			'title' 	=> 	__('Section 2','text-domain'),
 			'description' 	=> __('Description of section 2','text-domain'),
-			'options' 		=> array(
+			'options' 	=> array(
 				array(
 					'id'		=> 'number_field',
 					'title'		=> __('Number field','text-domain'),
@@ -79,13 +79,13 @@ $setting_page_1 = array(
 
 $setting_page_2 = array(
 
-	'page_nav' => __( 'Page 2', 'text-domain' ),
+	'page_nav' 	=> __( 'Page 2', 'text-domain' ),
 	'page_settings' => array(
 		
-		'page2_section_1'	=> array(
-			'title' 		=> 	__('Section 1','text-domain'),
+		'p2_section_1'	=> array(
+			'title' 	=> 	__('Section 1','text-domain'),
 			'description' 	=> __('Description of section 1','text-domain'),
-			'options' 		=> array(
+			'options' 	=> array(
 				array(
 					'id'		=> 'select_field_2',
 					'title'		=> __('Select field','text-domain'),
@@ -104,34 +104,31 @@ $setting_page_2 = array(
 
 
 $args = array(
-	'add_in_menu' => true, 															// true, false
-	'menu_type' => 'main', 														// main, submenu
-	'menu_title' => __( 'My Settings', 'text-domain' ), 								// Menu Title
-	'page_title' => __( 'My Settings', 'text-domain' ), 								// Page Title
-	'menu_page_title' => __( 'My Settings Page', 'text-domain' ),	// Menu Page Title
-	'capability' => "manage_options",												// Capability
-	'menu_slug' => "my-settings",													// Menu Slug
-	'menu_icon' => "dashicons-hammer",													// Menu Slug
-	'pages' => array(
+	'add_in_menu' 	=> true, 															// true, false
+	'menu_type' 	=> 'main', 														// main, submenu
+	'menu_title' 	=> __( 'My Settings', 'text-domain' ),
+	'page_title' 	=> __( 'My Settings', 'text-domain' ),
+	'menu_page_title' => __( 'My Settings Page', 'text-domain' ),
+	'capability' 	=> "manage_options",
+	'menu_slug' 	=> "my-settings",													// Menu Slug
+	'menu_icon' 	=> "dashicons-hammer",													// Menu Slug
+	'pages' 	=> array(
 		'setting_page_1' => $setting_page_1,
 		'setting_page_2' => $setting_page_2,
 	),
 );
-	
 
-$Pick_settings = new Pick_settings( $args );
-	
-	
+$Pick_settings = new Pick_settings( $args ); // This will Add Main Menu
 	
 	
 
 $sub_setting_page_1 = array(
 
-	'page_nav' => __( 'Sub Menu Page 1', 'text-domain' ),
+	'page_nav' 	=> __( 'Sub Menu Page 1', 'text-domain' ),
 	'page_settings' => array(
-		
-		'sub_page1_section_1'	=> array(
-			'title' 		=> 	__('Section 1','text-domain'),
+	
+		'sp1_section_1' => array(
+			'title' 	=> 	__('Section 1','text-domain'),
 			'description' 	=> __('Description of section 1','text-domain'),
 			'options' 		=> array(
 				array(
@@ -153,17 +150,17 @@ $sub_setting_page_1 = array(
 $sub_args = array(
 	'add_in_menu' => true, 															// true, false
 	'menu_type' => 'submenu', 														// main, submenu
-	'menu_title' => __( 'Sub Settings', 'text-domain' ), 								// Menu Title
-	'page_title' => __( 'Sub Settings', 'text-domain' ), 								// Page Title
-	'menu_page_title' => __( 'My Settings Page', 'text-domain' ),	// Menu Page Title
-	'capability' => "manage_options",												// Capability
+	'menu_title' => __( 'Sub Settings', 'text-domain' ),
+	'page_title' => __( 'Sub Settings', 'text-domain' ),
+	'menu_page_title' => __( 'My Settings Page', 'text-domain' ),
+	'capability' => "manage_options",
 	'menu_slug' => "my-sub-settings",													// Menu Slug
-	'parent_slug' => "my-settings",									// Parent Slug for submenu
+	'parent_slug' => "my-settings",
 	'pages' => array(
 		'sub_setting_page_1' => $sub_setting_page_1,
 	),
 );
 	
 
-$Pick_settings_sub = new Pick_settings( $sub_args );
+$Pick_settings_sub = new Pick_settings( $sub_args ); // This will add Submenu
 	
