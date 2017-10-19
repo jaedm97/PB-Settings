@@ -124,10 +124,10 @@ $Pick_settings = new Pick_settings( $args );
 #### Add submenu under any main menu
 ```php
 $sub_args = array(
-	'add_in_menu' => true, 														
-	'menu_type' => 'submenu', 													
+	'add_in_menu' => true,
+	'menu_type' => 'submenu',
 	'menu_title' => __( 'Sub Settings', 'text-domain' ),
-	'page_title' => __( 'Sub Settings', 'text-domain' )
+	'page_title' => __( 'Sub Settings', 'text-domain' ),
 	'menu_page_title' => __( 'My Settings Page', 'text-domain' ),
 	'capability' => "manage_options",
 	'menu_slug' => "my-sub-settings",
