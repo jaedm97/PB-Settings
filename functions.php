@@ -1,5 +1,5 @@
-include "class-pick-settings.php";
 
+include "class-pick-settings.php";
 
 $setting_page_1 = array(
 
