@@ -101,3 +101,22 @@ $setting_page_1 = array(
 	),
 );
 ```
+
+#### Add your options `$setting_page_1` to the Menu
+```php
+$args = array(
+	'add_in_menu'     => true,
+	'menu_type'       => 'main',
+	'menu_title'      => __( 'My Settings', 'text-domain' ),
+	'page_title'      => __( 'My Settings', 'text-domain' ),
+	'menu_page_title' => __( 'My Settings Page', 'text-domain' ),
+	'capability'      => "manage_options",
+	'menu_slug'       => "my-settings",
+	'menu_icon'       => "dashicons-hammer",
+	'pages' 	  => array(
+		'setting_page_1' => $setting_page_1,
+	),
+);
+
+$Pick_settings = new Pick_settings( $args );
+```
