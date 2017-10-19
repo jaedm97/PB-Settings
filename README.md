@@ -2,9 +2,14 @@
 An easy option and settigns management framwork for WordPress, Developer friendly and elegant look build with native WordPress UI,  
 
 ### How to use
+
+#### Adding Pick_Settings class file
 ```php
 include "class-pick-settings.php";
+```
 
+#### Add Menu to WordPress Menu List
+```php
 $args = array(
 	'add_in_menu'     => true,
 	'menu_type'       => 'main',
