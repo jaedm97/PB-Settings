@@ -216,8 +216,8 @@ $sub_args = array(
 	'page_title'      => __( 'Sub Settings', 'text-domain' ),
 	'menu_page_title' => __( 'Sub Settings Page', 'text-domain' ),
 	'capability'      => "manage_options",
-	'menu_slug'       => "my-settings",
-	'menu_icon'       => "dashicons-hammer",
+	'parent_slug' 	  => "my-settings",
+	'menu_slug'       => "sub-settings",
 	'pages' 	  => array(
 		'sub_setting_page_1' => $sub_setting_page_1,
 	),
