@@ -3,7 +3,7 @@
 * @Author 	:	PickPlugins
 * Copyright	: 	2015 PickPlugins.com
 *
-* Version	:	1.0.2 	
+* Version	:	1.0.3	
 */
 
 if ( ! defined('ABSPATH')) exit;  // if direct access 
@@ -372,14 +372,16 @@ class Pick_settings {
 }
 
 
-class Pick_error extends Exception { 
+if( ! class_exists( 'Pick_error' ) ) {
+	class Pick_error extends Exception { 
 
-	public function __construct($message, $code = 0, Exception $previous = null) {
-        parent::__construct($message, $code, $previous);
-    }
-	
-	public function get_error_message(){
+		public function __construct($message, $code = 0, Exception $previous = null) {
+			parent::__construct($message, $code, $previous);
+		}
 		
-		return "<p class='notice notice-error' style='padding: 10px;'>{$this->getMessage()}</p>";
+		public function get_error_message(){
+			
+			return "<p class='notice notice-error' style='padding: 10px;'>{$this->getMessage()}</p>";
+		}
 	}
 }
