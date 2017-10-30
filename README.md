@@ -5,11 +5,15 @@ An easy option and settigns management framwork for WordPress, Developer friendl
 
 # Input fields
 
-
-
-
-
-
+* text
+* textarea
+* number
+* select
+* checkbox
+* radio
+* colorpicker
+* datepicker
+* custom
 
 
 

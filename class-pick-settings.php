@@ -68,6 +68,7 @@ class Pick_settings {
 	public function pick_settings_field_generator( $option ) {
 			
 		$id 		= isset( $option['id'] ) ? $option['id'] : "";
+		$type 		= isset( $option['type'] ) ? $option['type'] : "";
 		$details 	= isset( $option['details'] ) ? $option['details'] : "";
 		
 		if( empty( $id ) ) return;
@@ -83,7 +84,7 @@ class Pick_settings {
 			elseif( isset($option['type']) && $option['type'] === 'colorpicker')$this->pick_settings_generate_colorpicker( $option );
 			elseif( isset($option['type']) && $option['type'] === 'datepicker')	$this->pick_settings_generate_datepicker( $option );
 
-			elseif( isset($option['type']) && $option['type'] === 'custom' ) 	do_action( "pick_settings_action_custom_field_$id", $option );
+			elseif( isset($option['type']) && $option['type'] === 'custom' ) 	do_action( "pick_settings_action_custom_field_$type", $option );
 
 			if( !empty( $details ) ) echo "<p class='description'>$details</p>";
 		
