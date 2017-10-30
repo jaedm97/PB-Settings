@@ -1,7 +1,9 @@
-<?php	
+<?php
 /*
-* @Author 		PickPlugins
-* Copyright: 	2015 PickPlugins.com
+* @Author 	:	PickPlugins
+* Copyright	: 	2015 PickPlugins.com
+*
+* Version	:	1.0.3	
 */
 
 if ( ! defined('ABSPATH')) exit;  // if direct access 
@@ -16,21 +18,22 @@ class Pick_settings {
     public function __construct( $args ){
 		
 		$this->data = &$args;
-		
+	
 		if( $this->add_in_menu() ) {
 			add_action( 'admin_menu', array( $this, 'add_menu_in_admin_menu' ), 12 );
 		}
+		
 		add_action( 'admin_init', array( $this, 'pick_settings_display_fields' ), 12 );
 		add_filter( 'whitelist_options', array( $this, 'pick_settings_whitelist_options' ), 99, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'pick_enqueue_color_picker' ) );
-		
-    }
+	}
 	
 	public function add_menu_in_admin_menu() {
 		
 		if( "main" == $this->get_menu_type() ) {
 			add_menu_page( $this->get_menu_name(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ), $this->get_menu_icon() );
 		}
+		
 		if( "submenu" == $this->get_menu_type() ) {
 			add_submenu_page( $this->get_parent_slug(), $this->get_page_title(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ) );
 		}
@@ -39,6 +42,7 @@ class Pick_settings {
 	public function pick_enqueue_color_picker(){
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wp-color-picker' );
+		wp_enqueue_script( 'jquery-ui-datepicker' );
 	}
 	
 	public function pick_settings_display_fields() { 
@@ -53,9 +57,9 @@ class Pick_settings {
 			);
 			
 			foreach( $setting['options'] as $option ) :
-
-				add_settings_field( $option['id'], $option['title'], array($this,'pick_settings_field_generator'), $this->get_current_page(), $key, $option );
 				
+			add_settings_field( $option['id'], $option['title'], array($this,'pick_settings_field_generator'), $this->get_current_page(), $key, $option );
+
 			endforeach;
 		
 		endforeach;
@@ -68,19 +72,42 @@ class Pick_settings {
 		
 		if( empty( $id ) ) return;
 		
-		if( isset($option['type']) && $option['type'] === 'select' ) 		$this->pick_settings_generate_select( $option );
-		elseif( isset($option['type']) && $option['type'] === 'checkbox')	$this->pick_settings_generate_checkbox( $option );
-		elseif( isset($option['type']) && $option['type'] === 'textarea')	$this->pick_settings_generate_textarea( $option );
-		elseif( isset($option['type']) && $option['type'] === 'number' ) 	$this->pick_settings_generate_number( $option );
-		elseif( isset($option['type']) && $option['type'] === 'text' ) 		$this->pick_settings_generate_text( $option );
-		elseif( isset($option['type']) && $option['type'] === 'colorpicker') $this->pick_settings_generate_colorpicker( $option );
+		try{
+			
+			if( isset($option['type']) && $option['type'] === 'select' ) 		$this->pick_settings_generate_select( $option );
+			elseif( isset($option['type']) && $option['type'] === 'checkbox')	$this->pick_settings_generate_checkbox( $option );
+			elseif( isset($option['type']) && $option['type'] === 'radio')		$this->pick_settings_generate_radio( $option );
+			elseif( isset($option['type']) && $option['type'] === 'textarea')	$this->pick_settings_generate_textarea( $option );
+			elseif( isset($option['type']) && $option['type'] === 'number' ) 	$this->pick_settings_generate_number( $option );
+			elseif( isset($option['type']) && $option['type'] === 'text' ) 		$this->pick_settings_generate_text( $option );
+			elseif( isset($option['type']) && $option['type'] === 'colorpicker')$this->pick_settings_generate_colorpicker( $option );
+			elseif( isset($option['type']) && $option['type'] === 'datepicker')	$this->pick_settings_generate_datepicker( $option );
+
+			elseif( isset($option['type']) && $option['type'] === 'custom' ) 	do_action( "pick_settings_action_custom_field_$id", $option );
+
+			if( !empty( $details ) ) echo "<p class='description'>$details</p>";
 		
-		elseif( isset($option['type']) && $option['type'] === 'custom' ) 	do_action( "pick_settings_action_custom_field_$id", $option );
-		
-		
-		if( !empty( $details ) ) echo "<p class='description'>$details</p>";
+		}
+		catch(Pick_error $e) {
+			echo $e->get_error_message();
+		}
 	}
 
+	public function pick_settings_generate_datepicker( $option ){
+		
+		$id 			= isset( $option['id'] ) ? $option['id'] : "";
+		$placeholder 	= isset( $option['placeholder'] ) ? $option['placeholder'] : "";
+		$value 	 		= get_option( $id );
+		
+		wp_register_style( 'jquery-ui', 'http://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css' );
+		wp_enqueue_style( 'jquery-ui' );
+		
+		echo "<input type='text' class='regular-text' name='$id' id='$id' placeholder='$placeholder' value='$value' />";
+		
+	
+		echo "<script>jQuery(document).ready(function($) { $('#$id').datepicker();});</script>";
+	}
+	
 	public function pick_settings_generate_colorpicker( $option ){
 		
 		$id 			= isset( $option['id'] ) ? $option['id'] : "";
@@ -122,12 +149,10 @@ class Pick_settings {
 	
 	public function pick_settings_generate_select( $option ){
 		
-		$id = isset( $option['id'] ) ? $option['id'] : "";
-		$args = isset( $option['args'] ) ? $option['args'] : array();
-		
-		// echo "<pre>"; print_r( $option ); echo "</pre>";
-		
-		$value 	 = get_option( $id );
+		$id 	= isset( $option['id'] ) ? $option['id'] : "";
+		$args 	= isset( $option['args'] ) ? $option['args'] : array();	
+		$args	= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
+		$value	= get_option( $id );
 		
 		echo "<select name='$id' id='$id'>";
 		foreach( $args as $key => $name ):
@@ -141,14 +166,32 @@ class Pick_settings {
 		
 		$id				= isset( $option['id'] ) ? $option['id'] : "";
 		$args			= isset( $option['args'] ) ? $option['args'] : array();
+		$args			= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
 		$option_value	= get_option( $id );
 		
 		echo "<fieldset>";
 		foreach( $args as $key => $value ):
-		
+
 			$checked = is_array( $option_value ) && in_array( $key, $option_value ) ? "checked" : "";
 			echo "<label for='$id-$key'><input name='{$id}[]' type='checkbox' id='$id-$key' value='$key' $checked>$value</label><br>";
 			
+		endforeach;
+		echo "</fieldset>";
+	}
+		
+	public function pick_settings_generate_radio( $option ){
+
+		$id				= isset( $option['id'] ) ? $option['id'] : "";
+		$args			= isset( $option['args'] ) ? $option['args'] : array();
+		$args			= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
+		$option_value	= get_option( $id );
+
+		echo "<fieldset>";
+		foreach( $args as $key => $value ):
+
+			$checked = is_array( $option_value ) && in_array( $key, $option_value ) ? "checked" : "";
+			echo "<label for='$id-$key'><input name='{$id}[]' type='radio' id='$id-$key' value='$key' $checked>$value</label><br>";
+				
 		endforeach;
 		echo "</fieldset>";
 	}
@@ -205,7 +248,63 @@ class Pick_settings {
 		echo "</div>";		
 	}
 	
+	
+	// Default Functions
+	
+	public function generate_args_from_string( $string ){
+		
+		if( strpos( $string, 'PICK_PAGES_ARRAY' ) !== false ) return $this->get_pages_array();
+		if( strpos( $string, 'PICK_TAX_' ) !== false ) return $this->get_taxonomies_array( $string );
+		
+		
+		return array();
+	}
+	
+	public function get_taxonomies_array( $string ){
+		
+		$taxonomies = array();
+		
+		preg_match_all( "/\%([^\]]*)\%/", $string, $matches );
+		
+		if( isset( $matches[1][0] ) ) $taxonomy = $matches[1][0];
+		else throw new Pick_error('Invalid taxonomy declaration !');
+		
+		if( ! taxonomy_exists( $taxonomy ) ) throw new Pick_error("Taxonomy <strong>$taxonomy</strong> doesn't exists !");
+		
+		$terms = get_terms( $taxonomy, array(
+			'hide_empty' => false,
+		) );
+		
+		foreach( $terms as $term ) $taxonomies[ $term->term_id ] = $term->name;
+				
+		return $taxonomies;		
+	}
+	
+	public function get_pages_array(){
+		
+		$pages_array = array();
+		foreach( get_pages() as $page ) $pages_array[ $page->ID ] = $page->post_title;
+		
+		return apply_filters( 'FILTER_PICK_PAGES_ARRAY', $pages_array );
+	}
+	
+	
 	// Get Data from Dataset //
+	
+	public function get_option_ids(){
+		
+		$option_ids = array();
+		foreach( $this->get_pages() as $page ):
+			$setting_sections = isset( $page['page_settings'] ) ? $page['page_settings'] : array();
+			foreach( $setting_sections as $setting_section ):
+		
+				$options = isset( $setting_section['options'] ) ? $setting_section['options'] : array();
+				foreach( $options as $option ) $option_ids[] = isset( $option['id'] ) ? $option['id'] : '';
+				
+			endforeach;
+		endforeach;
+		return $option_ids; 
+	}
 	
 	public function get_current_page(){
 		
@@ -247,6 +346,10 @@ class Pick_settings {
 		if( isset( $this->data['menu_page_title'] ) ) return $this->data['menu_page_title'];
 		else return "My Custom Menu";
 	}
+	private function get_menu_name(){
+		if( isset( $this->data['menu_name'] ) ) return $this->data['menu_name'];
+		else return "Menu Name";
+	}
 	private function get_menu_title(){
 		if( isset( $this->data['menu_title'] ) ) return $this->data['menu_title'];
 		else return "Menu Title";
@@ -266,4 +369,19 @@ class Pick_settings {
 	
 }
 
+}
+
+
+if( ! class_exists( 'Pick_error' ) ) {
+	class Pick_error extends Exception { 
+
+		public function __construct($message, $code = 0, Exception $previous = null) {
+			parent::__construct($message, $code, $previous);
+		}
+		
+		public function get_error_message(){
+			
+			return "<p class='notice notice-error' style='padding: 10px;'>{$this->getMessage()}</p>";
+		}
+	}
 }
