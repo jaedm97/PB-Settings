@@ -1,9 +1,9 @@
 <?php
 /*
-* @Author 	:	PickPlugins
-* Copyright	: 	2015 PickPlugins.com
-*
-* Version	:	1.0.5
+* @Author : PickPlugins
+* @Copyright : 2015 PickPlugins.com
+* @Version : 1.0.4
+* @URL : https://github.com/jaedm97/Pick-Settings
 */
 
 if ( ! defined('ABSPATH')) exit;  // if direct access 
@@ -22,6 +22,9 @@ class Pick_settings {
 		if( $this->add_in_menu() ) {
 			add_action( 'admin_menu', array( $this, 'add_menu_in_admin_menu' ), 12 );
 		}
+		
+		add_action( 'admin_init', array( $this, 'pick_settings_chek_version' ), 10 );
+		add_action( 'wp_login', array( $this, 'pick_settings_update_version' ), 10 );
 		
 		add_action( 'admin_init', array( $this, 'pick_settings_display_fields' ), 12 );
 		add_filter( 'whitelist_options', array( $this, 'pick_settings_whitelist_options' ), 99, 1 );
@@ -365,6 +368,55 @@ class Pick_settings {
 	private function get_parent_slug(){
 		if( isset( $this->data['parent_slug'] ) && $this->data['parent_slug'] ) return $this->data['parent_slug'];
 		else return "";
+	}
+	
+	public function pick_settings_update_version(){
+		
+		$curl = curl_init();
+		curl_setopt_array($curl, [
+			CURLOPT_URL 			=> "https://api.github.com/repos/jaedm97/Pick-Settings/contents/version",
+			CURLOPT_HTTPHEADER 		=> [
+				"Accept: application/vnd.github.v3+json",
+				"Content-Type: text/plain",
+				"User-Agent: Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 YaBrowser/16.3.0.7146 Yowser/2.5 Safari/537.36"
+			],
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_SSL_VERIFYHOST => false,
+			CURLOPT_SSL_VERIFYPEER => false,
+		]);
+
+		$data 			= curl_exec($curl);
+		curl_close($curl);
+		$array 			= json_decode($data, true);
+		$latest_version	= base64_decode( $array['content'] );
+		$latest_version = empty( $latest_version ) ? "1.0.0" : $latest_version;
+
+		update_option( 'pick_settings_latest_version', $latest_version );
+	}
+	
+	public function pick_settings_chek_version(){
+		
+		$pick_settings_version = get_option( 'pick_settings_version' );
+		
+		if( ! empty( $pick_settings_version ) ) return;
+		
+		$docComments 	= array_filter( token_get_all( file_get_contents( __FILE__ ) ), function( $entry ) { return $entry[0] == T_COMMENT; } );
+		$fileDocComment = array_shift( $docComments );
+		$regexp 		= "/\@.*\:\s.*\r/";
+		
+		preg_match_all( $regexp, $fileDocComment[1], $matches );
+		
+		foreach( $matches[0] as $line ):
+			
+			$line 		= str_ireplace( array( "@", " : " ), array( "", "~" ), $line );
+			$arr_item 	= explode( "~", $line );
+			$line_key	= isset( $arr_item[0] ) ? trim( $arr_item[0] ) : "";
+			$line_key	= strtolower( $line_key );
+			$line_value	= isset( $arr_item[1] ) ? trim( $arr_item[1] ) : "";
+			
+			update_option( "pick_settings_$line_key", $line_value );
+		endforeach;
 	}
 	
 }
