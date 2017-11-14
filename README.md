@@ -1,6 +1,8 @@
 # Pick Settings
 An easy option and settigns management framwork for WordPress, Developer friendly and elegant look build with native WordPress UI,  
 
+## Version: 1.0.5
+
 ### How to use
 
 #### Adding Pick_settings class file
