@@ -3,7 +3,7 @@
 * @Author 	:	PickPlugins
 * Copyright	: 	2015 PickPlugins.com
 *
-* Version	:	1.0.3	
+* Version	:	1.0.5
 */
 
 if ( ! defined('ABSPATH')) exit;  // if direct access 
@@ -46,7 +46,7 @@ class Pick_settings {
 	}
 	
 	public function pick_settings_display_fields() { 
-
+		
  		foreach( $this->get_settings_fields() as $key => $setting ):
 		
 			add_settings_section(
@@ -57,9 +57,7 @@ class Pick_settings {
 			);
 			
 			foreach( $setting['options'] as $option ) :
-				
 			add_settings_field( $option['id'], $option['title'], array($this,'pick_settings_field_generator'), $this->get_current_page(), $key, $option );
-
 			endforeach;
 		
 		endforeach;
@@ -73,7 +71,6 @@ class Pick_settings {
 		if( empty( $id ) ) return;
 		
 		try{
-			
 			if( isset($option['type']) && $option['type'] === 'select' ) 		$this->pick_settings_generate_select( $option );
 			elseif( isset($option['type']) && $option['type'] === 'checkbox')	$this->pick_settings_generate_checkbox( $option );
 			elseif( isset($option['type']) && $option['type'] === 'radio')		$this->pick_settings_generate_radio( $option );
@@ -103,8 +100,6 @@ class Pick_settings {
 		wp_enqueue_style( 'jquery-ui' );
 		
 		echo "<input type='text' class='regular-text' name='$id' id='$id' placeholder='$placeholder' value='$value' />";
-		
-	
 		echo "<script>jQuery(document).ready(function($) { $('#$id').datepicker();});</script>";
 	}
 	
@@ -240,10 +235,15 @@ class Pick_settings {
         echo "</nav>";
 
 		echo "<form action='options.php' method='post'>";
+		
 		settings_fields( $this->get_current_page() );
 		do_settings_sections( $this->get_current_page() );
-		submit_button();
-		echo "</form>";	
+		do_action( $this->get_current_page() );
+		
+		$get_settings_fields = $this->get_settings_fields();
+		if( ! empty( $get_settings_fields ) ) submit_button();
+		
+		echo "</form>";
 	
 		echo "</div>";		
 	}
