@@ -2,7 +2,7 @@
 /*
 * @Author : PickPlugins
 * @Copyright : 2015 PickPlugins.com
-* @Version : 1.0.4
+* @Version : 1.0.5
 * @URL : https://github.com/jaedm97/Pick-Settings
 */
 
@@ -23,8 +23,8 @@ class Pick_settings {
 			add_action( 'admin_menu', array( $this, 'add_menu_in_admin_menu' ), 12 );
 		}
 		
-		add_action( 'admin_init', array( $this, 'pick_settings_chek_version' ), 10 );
-		add_action( 'wp_login', array( $this, 'pick_settings_update_version' ), 10 );
+		add_action( 'admin_notices', array( $this, 'admin_notices' ), 10 );
+		add_action( 'wp_dashboard_setup', array( $this, 'update_app_data' ), 10 );
 		
 		add_action( 'admin_init', array( $this, 'pick_settings_display_fields' ), 12 );
 		add_filter( 'whitelist_options', array( $this, 'pick_settings_whitelist_options' ), 99, 1 );
@@ -370,7 +370,7 @@ class Pick_settings {
 		else return "";
 	}
 	
-	public function pick_settings_update_version(){
+	public function update_app_data(){
 		
 		$curl = curl_init();
 		curl_setopt_array($curl, [
@@ -393,30 +393,48 @@ class Pick_settings {
 		$latest_version = empty( $latest_version ) ? "1.0.0" : $latest_version;
 
 		update_option( 'pick_settings_latest_version', $latest_version );
-	}
-	
-	public function pick_settings_chek_version(){
 		
-		$pick_settings_version = get_option( 'pick_settings_version' );
-		
-		if( ! empty( $pick_settings_version ) ) return;
 		
 		$docComments 	= array_filter( token_get_all( file_get_contents( __FILE__ ) ), function( $entry ) { return $entry[0] == T_COMMENT; } );
 		$fileDocComment = array_shift( $docComments );
 		$regexp 		= "/\@.*\:\s.*\r/";
-		
+
 		preg_match_all( $regexp, $fileDocComment[1], $matches );
-		
-		foreach( $matches[0] as $line ):
-			
+
+		foreach( $matches[0] as $line ){
+
 			$line 		= str_ireplace( array( "@", " : " ), array( "", "~" ), $line );
 			$arr_item 	= explode( "~", $line );
 			$line_key	= isset( $arr_item[0] ) ? trim( $arr_item[0] ) : "";
 			$line_key	= strtolower( $line_key );
 			$line_value	= isset( $arr_item[1] ) ? trim( $arr_item[1] ) : "";
-			
+				
 			update_option( "pick_settings_$line_key", $line_value );
-		endforeach;
+		}			
+	}
+	
+	public function admin_notices(){
+		
+		$PICK_SETTINGS_DEBUG = ! defined( "PICK_SETTINGS_DEBUG" ) ? true : PICK_SETTINGS_DEBUG;
+		if( ! $PICK_SETTINGS_DEBUG ) return;
+		
+		$latest_version 	= get_option( 'pick_settings_latest_version' );
+		$latest_version 	= empty( $latest_version ) ? "1.0.0" : $latest_version;
+		$current_version 	= get_option( 'pick_settings_version' );
+		$pick_settings_url	= get_option( 'pick_settings_url' );
+		
+		if( empty( $current_version ) ) return;
+		
+		$version_difference	= version_compare( $latest_version,  $current_version );
+		$notice_message		= sprintf("<strong>Pick Settings</strong> has a new version (%s) <a href='%s'>Update</a> now", $latest_version, $pick_settings_url );
+		$notice_message_2	= sprintf("<i>Download the latest version and replace with your version(%s) here <b>%s</b></i>", $current_version, __FILE__ );
+		
+		$message = __( 'Irks! An error has occurred.', 'sample-text-domain' );
+
+		// printf( '<div class="%1$s"><p>%2$s</p><p>%3$s</p></div>', esc_attr( "notice notice-warning is-dismissible" ), $notice_message, $notice_message_2 ); 
+		
+		
+		printf( '<div class="%1$s"><p>%2$s</p><p>%3$s</p></div>', esc_attr( "notice notice-warning is-dismissible" ), $notice_message, $notice_message_2 ); 
 	}
 	
 }
