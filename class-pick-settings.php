@@ -2,7 +2,7 @@
 /*
 * @Author : PickPlugins
 * @Copyright : 2015 PickPlugins.com
-* @Version : 1.0.5
+* @Version : 1.0.6
 * @URL : https://github.com/jaedm97/Pick-Settings
 */
 
@@ -82,6 +82,9 @@ class Pick_settings {
 			elseif( isset($option['type']) && $option['type'] === 'text' ) 		$this->pick_settings_generate_text( $option );
 			elseif( isset($option['type']) && $option['type'] === 'colorpicker')$this->pick_settings_generate_colorpicker( $option );
 			elseif( isset($option['type']) && $option['type'] === 'datepicker')	$this->pick_settings_generate_datepicker( $option );
+			elseif( isset($option['type']) && $option['type'] === 'select2')	$this->pick_settings_generate_select2( $option );
+			elseif( isset($option['type']) && $option['type'] === 'range')		$this->pick_settings_generate_range( $option );
+			elseif( isset($option['type']) && $option['type'] === 'media')		$this->pick_settings_generate_media( $option );
 
 			elseif( isset($option['type']) && $option['type'] === 'custom' ) 	do_action( "pick_settings_action_custom_field_$id", $option );
 
@@ -93,11 +96,191 @@ class Pick_settings {
 		}
 	}
 
+	public function pick_settings_generate_media( $option ){
+
+		$id				= isset( $option['id'] ) ? $option['id'] : "";
+		$placeholder	= isset( $option['placeholder'] ) ? $option['placeholder'] : "Select Files";
+		$value			= get_option( $id );
+		$file_url		= wp_get_attachment_url( $value );
+		
+		// $value		= empty( $value ) ? 0 : $value;
+		
+		// echo "<input type='range' min='$min' max='max' name='$id' value='$value' class='pick_range' id='$id'>";
+		// echo "<span id='{$id}_show_value' class='show_value'>$value</span>";
+		
+		wp_enqueue_script('plupload-all');	
+		
+		/* echo "<div id='plupload-upload-ui-$id' class='plupload-upload-ui hide-if-no-js'>";
+		echo "<div id='drag-drop-area-$id' class='drag-drop-area'><div class='drag-drop-inside'>";
+		echo "<div class='item attach_id='$value'>";
+		echo "<img src='$file_url' /><span attach_id='$value' class=delete>Delete</span>";
+		echo "<input  type=hidden name='$id' value='$value' /></div>";
+		echo "<input id='plupload-browse-$id' type='button' value='$placeholder' class='button' />";
+			
+		$plupload_init = array(
+			'runtimes'            => "html5,silverlight,flash,html4",
+			'browse_button'       => "plupload-browse-$id",
+			//'multi_selection'	  =>false,
+			'container'           => "plupload-upload-ui-$id",
+			'drop_element'        => "drag-drop-area-$id",
+			'file_data_name'      => "async-upload",
+			'multiple_queues'     => true,
+			'max_file_size'       => wp_max_upload_size()."b",
+			'url'                 => admin_url('admin-ajax.php'),
+			'filters'             => array(
+				array(
+					'title' => __('Allowed Files', 'text-domain'), 
+					'extensions' => 'gif,png,jpg,jpeg',
+				)
+			),
+			'multipart'           => true,
+			'urlstream_upload'    => true,
+			'multipart_params'    => array(
+				'_ajax_nonce' => wp_create_nonce('photo-upload'),
+				'action'      => 'photo_gallery_upload',
+			),
+		);
+
+		// we should probably not apply this filter, plugins may expect wp's media uploader...
+		$plupload_init = apply_filters('plupload_init', $plupload_init);
+			
+			
+		echo "<script> jQuery(document).ready(function($){
+		
+		// create the uploader and pass the config from above
+		var uploader_$id = new plupload.Uploader(".json_encode($plupload_init).");
+		
+		// checks if browser supports drag and drop upload, makes some css adjustments if necessary
+		uploader_$id.bind('Init', function(up){
+			var uploaddiv = $('#plupload-upload-ui-$id');
+			if(up.features.dragdrop){
+				uploaddiv.addClass('drag-drop');
+				$('#drag-drop-area-$id')
+					.bind('dragover.wp-uploader', function(){ uploaddiv.addClass('drag-over'); })
+					.bind('dragleave.wp-uploader, drop.wp-uploader', function(){ uploaddiv.removeClass('drag-over'); });
+				}else{
+				  uploaddiv.removeClass('drag-drop');
+				  $('#drag-drop-area-$id').unbind('.wp-uploader');
+				}
+			});
+			uploader_$id.init();
+		
+			// a file was added in the queue
+			uploader_$id.bind('FilesAdded', function(up, files){
+			var hundredmb = 100 * 1024 * 1024, max = parseInt(up.settings.max_file_size, 10);
+			
+			plupload.each(files, function(file){
+				if (max > hundredmb && file.size > hundredmb && up.runtime != 'html5'){ console.log('Size Error...'); }
+			});
+		
+			up.refresh();
+			up.start();
+		});
+		
+		// a file was uploaded 
+		uploader_$id.bind('FileUploaded', function(up, file, response) {
+		
+			// this is your ajax response, update the DOM with it or something...
+			//console.log(response);
+				
+			var result = $.parseJSON(response.response);
+			
+			var attach_url = result.html.attach_url;
+			var attach_id = result.html.attach_id;
+			var attach_title = result.html.attach_title;
+				
+			var html_new = '<div class=item attach_id=attach_id><img src=attach_url /><span attach_id=attach_id class=delete>Delete</span><input type=hidden name=$id value=attach_id /></div>';
+				
+			$('#plupload-upload-ui-$id .drag-drop-inside').prepend(html_new); 
+				 
+		});
+		});</script>";		 */
+			
+	}
+	
+	public function pick_settings_generate_range( $option ){
+
+		$id 		= isset( $option['id'] ) ? $option['id'] : "";
+		$min 		= isset( $option['min'] ) ? $option['min'] : 1;
+		$max 		= isset( $option['max'] ) ? $option['max'] : 100;
+		$value		= get_option( $id );
+		$value		= empty( $value ) ? 0 : $value;
+		
+		echo "<input type='range' min='$min' max='max' name='$id' value='$value' class='pick_range' id='$id'>";
+		echo "<span id='{$id}_show_value' class='show_value'>$value</span>";
+		
+		echo "<style>
+		.pick_range {
+			-webkit-appearance: none;
+			width: 280px;
+			height: 20px;
+			border-radius: 3px;
+			background: #9a9a9a;
+			outline: none;
+			opacity: 0.7;
+			-webkit-transition: .2s;
+			transition: opacity .2s;
+		}
+		.pick_range:hover { opacity: 1; }
+		.show_value {
+			font-size: 25px;
+			margin-left: 8px;
+		}
+		.pick_range::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 25px;
+			height: 25px;
+			border-radius: 50%;
+			background: #138E77;
+			cursor: pointer;
+		}
+		.pick_range::-moz-range-thumb {
+			width: 25px;
+			height: 25px;
+			border-radius: 50%;
+			background: #138E77;
+			cursor: pointer;
+		}
+		</style>
+		<script>jQuery(document).ready(function($) { 
+			$('#$id').on('input', function(e) { $('#{$id}_show_value').html( $('#$id').val() ); });
+		})
+		</script>";
+	}
+	
+	public function pick_settings_generate_select2( $option ){
+
+		$id 		= isset( $option['id'] ) ? $option['id'] : "";
+		$args 		= isset( $option['args'] ) ? $option['args'] : array();	
+		$args		= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
+		$value		= get_option( $id );
+		$multiple 	= isset( $option['multiple'] ) ? $option['multiple'] : '';	
+		
+		wp_enqueue_style('select2', 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/css/select2.min.css' );
+		wp_enqueue_script('select2', 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.min.js', array('jquery') );
+		
+		echo $multiple ? "<select name='{$id}[]' id='$id' multiple>" : "<select name='{$id}' id='$id'>";
+		foreach( $args as $key => $name ):
+			
+			if( $multiple ) $selected = in_array( $key, $value ) ? "selected" : "";
+			else $selected = $value == $key ? "selected" : "";
+			echo "<option $selected value='$key'>$name</option>";
+			
+		endforeach;
+		echo "</select>";
+		
+		echo "<script>jQuery(document).ready(function($) { $('#$id').select2({
+			width: '320px',
+			allowClear: true
+		});});</script>";
+	}
+	
 	public function pick_settings_generate_datepicker( $option ){
 		
 		$id 			= isset( $option['id'] ) ? $option['id'] : "";
 		$placeholder 	= isset( $option['placeholder'] ) ? $option['placeholder'] : "";
-		$value 	 		= get_option( $id );
+		$value 			= get_option( $id );
 		
 		wp_register_style( 'jquery-ui', 'http://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css' );
 		wp_enqueue_style( 'jquery-ui' );
