@@ -2,7 +2,7 @@
 /*
 * @Author : PickPlugins
 * @Copyright : 2015 PickPlugins.com
-* @Version : 1.0.6
+* @Version : 1.0.7
 * @URL : https://github.com/jaedm97/Pick-Settings
 */
 
@@ -98,104 +98,30 @@ class Pick_settings {
 
 	public function pick_settings_generate_media( $option ){
 
-		$id				= isset( $option['id'] ) ? $option['id'] : "";
-		$placeholder	= isset( $option['placeholder'] ) ? $option['placeholder'] : "Select Files";
-		$value			= get_option( $id );
-		$file_url		= wp_get_attachment_url( $value );
+		$id			= isset( $option['id'] ) ? $option['id'] : "";
+		$value		= get_option( $id );
+		$media_url	= wp_get_attachment_url( $value );
 		
-		// $value		= empty( $value ) ? 0 : $value;
+		wp_enqueue_media();
 		
-		// echo "<input type='range' min='$min' max='max' name='$id' value='$value' class='pick_range' id='$id'>";
-		// echo "<span id='{$id}_show_value' class='show_value'>$value</span>";
+		echo "<div class='media_preview' style='width: 150px;margin-bottom: 10px;'>";
+		echo "<img id='media_preview_$id' src='$media_url' style='width:100%'/>";
+		echo "</div>";
+		echo "<input type='hidden' name='$id' id='media_input_$id' value='$value' />";
+		echo "<div class='button' id='media_upload_$id'>Upload</div>";
 		
-		wp_enqueue_script('plupload-all');	
-		
-		/* echo "<div id='plupload-upload-ui-$id' class='plupload-upload-ui hide-if-no-js'>";
-		echo "<div id='drag-drop-area-$id' class='drag-drop-area'><div class='drag-drop-inside'>";
-		echo "<div class='item attach_id='$value'>";
-		echo "<img src='$file_url' /><span attach_id='$value' class=delete>Delete</span>";
-		echo "<input  type=hidden name='$id' value='$value' /></div>";
-		echo "<input id='plupload-browse-$id' type='button' value='$placeholder' class='button' />";
-			
-		$plupload_init = array(
-			'runtimes'            => "html5,silverlight,flash,html4",
-			'browse_button'       => "plupload-browse-$id",
-			//'multi_selection'	  =>false,
-			'container'           => "plupload-upload-ui-$id",
-			'drop_element'        => "drag-drop-area-$id",
-			'file_data_name'      => "async-upload",
-			'multiple_queues'     => true,
-			'max_file_size'       => wp_max_upload_size()."b",
-			'url'                 => admin_url('admin-ajax.php'),
-			'filters'             => array(
-				array(
-					'title' => __('Allowed Files', 'text-domain'), 
-					'extensions' => 'gif,png,jpg,jpeg',
-				)
-			),
-			'multipart'           => true,
-			'urlstream_upload'    => true,
-			'multipart_params'    => array(
-				'_ajax_nonce' => wp_create_nonce('photo-upload'),
-				'action'      => 'photo_gallery_upload',
-			),
-		);
-
-		// we should probably not apply this filter, plugins may expect wp's media uploader...
-		$plupload_init = apply_filters('plupload_init', $plupload_init);
-			
-			
-		echo "<script> jQuery(document).ready(function($){
-		
-		// create the uploader and pass the config from above
-		var uploader_$id = new plupload.Uploader(".json_encode($plupload_init).");
-		
-		// checks if browser supports drag and drop upload, makes some css adjustments if necessary
-		uploader_$id.bind('Init', function(up){
-			var uploaddiv = $('#plupload-upload-ui-$id');
-			if(up.features.dragdrop){
-				uploaddiv.addClass('drag-drop');
-				$('#drag-drop-area-$id')
-					.bind('dragover.wp-uploader', function(){ uploaddiv.addClass('drag-over'); })
-					.bind('dragleave.wp-uploader, drop.wp-uploader', function(){ uploaddiv.removeClass('drag-over'); });
-				}else{
-				  uploaddiv.removeClass('drag-drop');
-				  $('#drag-drop-area-$id').unbind('.wp-uploader');
-				}
-			});
-			uploader_$id.init();
-		
-			// a file was added in the queue
-			uploader_$id.bind('FilesAdded', function(up, files){
-			var hundredmb = 100 * 1024 * 1024, max = parseInt(up.settings.max_file_size, 10);
-			
-			plupload.each(files, function(file){
-				if (max > hundredmb && file.size > hundredmb && up.runtime != 'html5'){ console.log('Size Error...'); }
-			});
-		
-			up.refresh();
-			up.start();
+		echo "<script>jQuery(document).ready(function($){
+		$('#media_upload_$id').click(function() {
+			var send_attachment_bkp = wp.media.editor.send.attachment;
+			wp.media.editor.send.attachment = function(props, attachment) {
+				$('#media_preview_$id').attr('src', attachment.url);
+				$('#media_input_$id').val(attachment.id);
+				wp.media.editor.send.attachment = send_attachment_bkp;
+			}
+			wp.media.editor.open($(this));
+			return false;
 		});
-		
-		// a file was uploaded 
-		uploader_$id.bind('FileUploaded', function(up, file, response) {
-		
-			// this is your ajax response, update the DOM with it or something...
-			//console.log(response);
-				
-			var result = $.parseJSON(response.response);
-			
-			var attach_url = result.html.attach_url;
-			var attach_id = result.html.attach_id;
-			var attach_title = result.html.attach_title;
-				
-			var html_new = '<div class=item attach_id=attach_id><img src=attach_url /><span attach_id=attach_id class=delete>Delete</span><input type=hidden name=$id value=attach_id /></div>';
-				
-			$('#plupload-upload-ui-$id .drag-drop-inside').prepend(html_new); 
-				 
-		});
-		});</script>";		 */
-			
+		});	</script>";
 	}
 	
 	public function pick_settings_generate_range( $option ){
