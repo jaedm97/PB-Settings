@@ -2,7 +2,7 @@
 /*
 * @Author : PickPlugins
 * @Copyright : 2015 PickPlugins.com
-* @Version : 1.0.7
+* @Version : 1.0.8
 * @URL : https://github.com/jaedm97/Pick-Settings
 */
 
@@ -179,7 +179,7 @@ class Pick_settings {
 
 		$id 		= isset( $option['id'] ) ? $option['id'] : "";
 		$args 		= isset( $option['args'] ) ? $option['args'] : array();	
-		$args		= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
+		$args		= is_array( $args ) ? $args : $this->generate_args_from_string( $args, $option );
 		$value		= get_option( $id );
 		$multiple 	= isset( $option['multiple'] ) ? $option['multiple'] : '';	
 		
@@ -258,7 +258,7 @@ class Pick_settings {
 		
 		$id 	= isset( $option['id'] ) ? $option['id'] : "";
 		$args 	= isset( $option['args'] ) ? $option['args'] : array();	
-		$args	= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
+		$args	= is_array( $args ) ? $args : $this->generate_args_from_string( $args, $option );
 		$value	= get_option( $id );
 		
 		echo "<select name='$id' id='$id'>";
@@ -273,7 +273,7 @@ class Pick_settings {
 		
 		$id				= isset( $option['id'] ) ? $option['id'] : "";
 		$args			= isset( $option['args'] ) ? $option['args'] : array();
-		$args			= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
+		$args			= is_array( $args ) ? $args : $this->generate_args_from_string( $args, $option );
 		$option_value	= get_option( $id );
 		
 		echo "<fieldset>";
@@ -290,7 +290,7 @@ class Pick_settings {
 
 		$id				= isset( $option['id'] ) ? $option['id'] : "";
 		$args			= isset( $option['args'] ) ? $option['args'] : array();
-		$args			= is_array( $args ) ? $args : $this->generate_args_from_string( $args );
+		$args			= is_array( $args ) ? $args : $this->generate_args_from_string( $args, $option );
 		$option_value	= get_option( $id );
 
 		echo "<fieldset>";
@@ -346,7 +346,7 @@ class Pick_settings {
 		endforeach;
         echo "</nav>";
 
-		echo "<form action='options.php' method='post'>";
+		echo "<form class='pick_settings_form' action='options.php' method='post'>";
 		
 		settings_fields( $this->get_current_page() );
 		do_settings_sections( $this->get_current_page() );
@@ -356,23 +356,78 @@ class Pick_settings {
 		if( ! empty( $get_settings_fields ) ) submit_button();
 		
 		echo "</form>";
-	
+		
+		/* echo "<style>
+nav.nav-tab-wrapper {
+    border-bottom: 1px solid #DC4840;
+}
+.nav-tab, .nav-tab:hover, .nav-tab:focus, .nav-tab:active, .nav-tab:visited {
+    float: left;
+    border-bottom: none;
+    padding: 5px 10px;
+    font-size: 14px;
+    line-height: 24px;
+    color: #555;
+    background: none;
+    border: none;
+    outline-color: none;
+    outline-style: none;
+    outline-width: none;
+}
+a.nav-tab.nav-tab-active {
+    background: #ef726b;
+    color: #fffefe;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-right: none;
+    margin-bottom: -1px;
+    border-bottom: 1px solid #DC4840;
+}
+form.pick_settings_form {
+    background: #fff;
+    padding: 10px;
+    box-shadow: 0 2px 4px 3px rgba(0,0,0,.04);
+}
+		</style>"; */
+		
 		echo "</div>";		
 	}
 	
 	
 	// Default Functions
 	
-	public function generate_args_from_string( $string ){
+	public function generate_args_from_string( $string, $option ){
 		
 		if( strpos( $string, 'PICK_PAGES_ARRAY' ) !== false ) return $this->get_pages_array();
-		if( strpos( $string, 'PICK_TAX_' ) !== false ) return $this->get_taxonomies_array( $string );
+		if( strpos( $string, 'PICK_TAX_' ) !== false ) return $this->get_taxonomies_array( $string, $option );
+		if( strpos( $string, 'PICK_POSTS_' ) !== false ) return $this->get_posts_array( $string, $option );
 		
 		
 		return array();
 	}
 	
-	public function get_taxonomies_array( $string ){
+	public function get_posts_array( $string, $option ){
+		
+		$arr_posts = array();
+		
+		preg_match_all( "/\%([^\]]*)\%/", $string, $matches );
+		
+		if( isset( $matches[1][0] ) ) $post_type = $matches[1][0];
+		else throw new Pick_error('Invalid post type declaration!');
+		
+		if( ! post_type_exists( $post_type ) ) throw new Pick_error("Post type <strong>$post_type</strong> doesn't exists!");
+		
+		$wp_query 	= isset( $option['wp_query'] ) ? $option['wp_query'] : array();
+		$ppp 		= isset( $wp_query['posts_per_page'] ) ? $option['posts_per_page'] : -1;
+		$wp_query 	= array_merge( $wp_query, array( 'post_type' => $post_type, 'posts_per_page' => $ppp ) );
+		$posts 		= get_posts( $wp_query );
+		
+		foreach( $posts as $post ) $arr_posts[ $post->ID ] = $post->post_title;
+				
+		return $arr_posts;		
+	}
+	
+	public function get_taxonomies_array( $string, $option ){
 		
 		$taxonomies = array();
 		
