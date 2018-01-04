@@ -2,7 +2,7 @@
 /*
 * @Author : PickPlugins
 * @Copyright : 2015 PickPlugins.com
-* @Version : 1.0.8
+* @Version : 1.0.9
 * @URL : https://github.com/jaedm97/Pick-Settings
 */
 
@@ -34,7 +34,7 @@ class Pick_settings {
 	public function add_menu_in_admin_menu() {
 		
 		if( "main" == $this->get_menu_type() ) {
-			add_menu_page( $this->get_menu_name(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ), $this->get_menu_icon() );
+			add_menu_page( $this->get_menu_name(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ), $this->get_menu_icon(), $this->get_menu_position() );
 		}
 		
 		if( "submenu" == $this->get_menu_type() ) {
@@ -85,11 +85,10 @@ class Pick_settings {
 			elseif( isset($option['type']) && $option['type'] === 'select2')	$this->pick_settings_generate_select2( $option );
 			elseif( isset($option['type']) && $option['type'] === 'range')		$this->pick_settings_generate_range( $option );
 			elseif( isset($option['type']) && $option['type'] === 'media')		$this->pick_settings_generate_media( $option );
-
-			elseif( isset($option['type']) && $option['type'] === 'custom' ) 	do_action( "pick_settings_action_custom_field_$id", $option );
-
-			if( !empty( $details ) ) echo "<p class='description'>$details</p>";
 		
+			do_action( "pick_settings_$id", $option );
+			
+			if( !empty( $details ) ) echo "<p class='description'>$details</p>";
 		}
 		catch(Pick_error $e) {
 			echo $e->get_error_message();
@@ -101,11 +100,22 @@ class Pick_settings {
 		$id			= isset( $option['id'] ) ? $option['id'] : "";
 		$value		= get_option( $id );
 		$media_url	= wp_get_attachment_url( $value );
+		$media_type	= get_post_mime_type( $value );
+		$media_title= get_the_title( $value );
 		
 		wp_enqueue_media();
 		
-		echo "<div class='media_preview' style='width: 150px;margin-bottom: 10px;'>";
-		echo "<img id='media_preview_$id' src='$media_url' style='width:100%'/>";
+		echo "<div class='media_preview' style='width: 150px;margin-bottom: 10px;background: #d2d2d2;padding: 15px 5px;    text-align: center;border-radius: 5px;'>";
+		
+		if( "audio/mpeg" == $media_type ){
+			
+			echo "<div id='media_preview_$id' class='dashicons dashicons-format-audio' style='font-size: 70px;display: inline;'></div>";
+			echo "<div>$media_title</div>";
+		}
+		else {
+			echo "<img id='media_preview_$id' src='$media_url' style='width:100%'/>";
+		}
+
 		echo "</div>";
 		echo "<input type='hidden' name='$id' id='media_input_$id' value='$value' />";
 		echo "<div class='button' id='media_upload_$id'>Upload</div>";
@@ -313,10 +323,13 @@ class Pick_settings {
 	
 	public function pick_settings_whitelist_options( $whitelist_options ){
 		
-		foreach( $this->get_pages() as $page_id => $page ): foreach( $page['page_settings'] as $section ):
-			foreach( $section['options'] as $option ):
-				$whitelist_options[$page_id][] = $option['id'];
-			endforeach; endforeach;
+		foreach( $this->get_pages() as $page_id => $page ) :
+			$page_settings = isset( $page['page_settings'] ) ? $page['page_settings'] : array();
+			foreach( $page_settings as $section ):
+				foreach( $section['options'] as $option ):
+					$whitelist_options[$page_id][] = $option['id'];
+				endforeach; 
+			endforeach;
 		endforeach;
 		
 		return $whitelist_options;
@@ -329,7 +342,6 @@ class Pick_settings {
 		
 		parse_str( $_SERVER['QUERY_STRING'], $nav_menu_url_args );
 		global $pagenow;
-		
 		
 		settings_errors();
 		
@@ -352,43 +364,58 @@ class Pick_settings {
 		do_settings_sections( $this->get_current_page() );
 		do_action( $this->get_current_page() );
 		
-		$get_settings_fields = $this->get_settings_fields();
-		if( ! empty( $get_settings_fields ) ) submit_button();
+		$show_submit_button = $this->show_submit_button();
+		if( $show_submit_button ) submit_button();
 		
 		echo "</form>";
 		
-		/* echo "<style>
-nav.nav-tab-wrapper {
-    border-bottom: 1px solid #DC4840;
-}
-.nav-tab, .nav-tab:hover, .nav-tab:focus, .nav-tab:active, .nav-tab:visited {
-    float: left;
-    border-bottom: none;
-    padding: 5px 10px;
-    font-size: 14px;
-    line-height: 24px;
-    color: #555;
-    background: none;
-    border: none;
-    outline-color: none;
-    outline-style: none;
-    outline-width: none;
-}
-a.nav-tab.nav-tab-active {
-    background: #ef726b;
-    color: #fffefe;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    border-right: none;
-    margin-bottom: -1px;
-    border-bottom: 1px solid #DC4840;
-}
-form.pick_settings_form {
-    background: #fff;
-    padding: 10px;
-    box-shadow: 0 2px 4px 3px rgba(0,0,0,.04);
-}
-		</style>"; */
+		if( $this->show_sidebar() ) {
+		
+			echo "<div class='pick_settings_sidebar'>";
+			
+			echo "<div class='pick_settings_sidebar_header'>";
+			echo "<span class='dashicons dashicons-arrow-right-alt2'></span>";
+			echo apply_filters( 'pick_settings_filter_sidebar_title', "<span>Pick settings sidebar</span>" );
+			echo "</div>";
+			
+			do_action( 'pick_settings_sidebar_content_before' );
+			echo "<div class='pick_settings_sidebar_content'>";
+			do_action( 'pick_settings_sidebar_content' );
+			echo "</div>";
+			do_action( 'pick_settings_sidebar_content_after' );
+			
+			echo "</div>";
+			
+			echo "<div class='pick_settings_sidebar_mini'><span class='dashicons dashicons-menu'></span></div>";
+			
+			echo "<style>
+			form.pick_settings_form {display: inline-block;width: 70%;min-width: 320px;}
+			.pick_settings_sidebar {width: 320px;background: #fff;min-height: 450px;position: absolute;right: 20px;top: 75px;}
+			.pick_settings_sidebar_header {padding: 10px;background: #d84141;color: #fff;border-top-left-radius: 5px;border-top-right-radius: 5px;cursor: pointer;}
+			.pick_settings_sidebar_content {padding: 10px;}
+			.pick_settings_sidebar_mini {background: #d84141;color: #fff;padding: 15px;border-radius: 3px;cursor: pointer;display: none;position: absolute;top: 150px;right: 20px;}</style> 
+
+			<script>jQuery(document).ready(function($) {
+
+			$(document).on('click', '.pick_settings_sidebar_header', function() {
+				
+				$('.pick_settings_sidebar').fadeOut( '300' );
+				setTimeout(function(){
+					$('.pick_settings_form').css('width','100%');
+					$('.pick_settings_sidebar_mini').fadeIn();
+				}, 400);
+			})
+			$(document).on('click', '.pick_settings_sidebar_mini', function() {
+				
+				$('.pick_settings_sidebar_mini').fadeOut( '300' );
+				setTimeout(function(){
+					$('.pick_settings_form').css('width','70%');
+					$('.pick_settings_sidebar').fadeIn();
+				}, 400);
+			})
+
+			});</script>";
+		}
 		
 		echo "</div>";		
 	}
@@ -473,6 +500,15 @@ form.pick_settings_form {
 		return $option_ids; 
 	}
 	
+	
+	private function show_sidebar(){
+		return isset( $this->data['show_sidebar'] ) ? $this->data['show_sidebar'] : false;
+	}
+	private function show_submit_button(){
+		return isset( $this->get_pages()[$this->get_current_page()]['show_submit'] )
+		? $this->get_pages()[$this->get_current_page()]['show_submit'] 
+		: true;
+	}
 	public function get_current_page(){
 		
 		$all_pages 		= $this->get_pages();
@@ -486,8 +522,14 @@ form.pick_settings_form {
 		else return "main";
 	}
 	private function get_pages(){
-		if( isset( $this->data['pages'] ) ) return $this->data['pages'];
+		if( isset( $this->data['pages'] ) ) $pages = $this->data['pages'];
 		else return array();
+
+		$pages_sorted = array();
+		foreach ($pages as $page_key => $page) $pages_sorted[$page_key] = $page['priority'];
+		array_multisort($pages_sorted, SORT_ASC, $pages);
+
+		return $pages;
 	}
 	private function get_settings_fields(){
 		if( isset( $this->get_pages()[$this->get_current_page()]['page_settings'] ) ) return $this->get_pages()[$this->get_current_page()]['page_settings'];
@@ -496,6 +538,10 @@ form.pick_settings_form {
 	private function get_settings_name(){
 		if( isset( $this->data['settings_name'] ) ) return $this->data['settings_name'];
 		else return "my_custom_settings";
+	}
+	private function get_menu_position(){
+		if( isset( $this->data['position'] ) ) return $this->data['position'];
+		else return "";
 	}
 	private function get_menu_icon(){
 		if( isset( $this->data['menu_icon'] ) ) return $this->data['menu_icon'];
