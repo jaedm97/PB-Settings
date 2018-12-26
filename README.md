@@ -1,7 +1,7 @@
 # Pick Settings
 An easy option and settigns management framwork for WordPress, Developer friendly and elegant look build with native WordPress UI,  
 
-## Version: 1.0.9
+## Version: 1.1.0
 
 ### How to use
 
