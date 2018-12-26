@@ -2,7 +2,7 @@
 /*
 * @Author : PickPlugins
 * @Copyright : 2015 PickPlugins.com
-* @Version : 1.0.9
+* @Version : 1.1.0
 * @URL : https://github.com/jaedm97/Pick-Settings
 */
 
@@ -15,7 +15,7 @@ class Pick_settings {
 	
 	public $data = array();
 	
-    public function __construct( $args ){
+    public function __construct( $args = array() ){
 		
 		$this->data = &$args;
 	
@@ -33,12 +33,16 @@ class Pick_settings {
 	
 	public function add_menu_in_admin_menu() {
 		
-		if( "main" == $this->get_menu_type() ) {
-			add_menu_page( $this->get_menu_name(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ), $this->get_menu_icon(), $this->get_menu_position() );
+		if( "menu" == $this->get_menu_type() ) {
+            $menu_ret = add_menu_page( $this->get_menu_name(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ), $this->get_menu_icon(), $this->get_menu_position() );
+
+			do_action( 'pick_settings_menu_added_' . $this->get_menu_slug(), $menu_ret );
 		}
 		
 		if( "submenu" == $this->get_menu_type() ) {
-			add_submenu_page( $this->get_parent_slug(), $this->get_page_title(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ) );
+			$submenu_ret = add_submenu_page( $this->get_parent_slug(), $this->get_page_title(), $this->get_menu_title(), $this->get_capability(), $this->get_menu_slug(), array( $this, 'pick_settings_display_function' ) );
+
+            do_action( 'pick_settings_submenu_added_' . $this->get_menu_slug(), $submenu_ret );
 		}
 	}
 	
@@ -60,7 +64,14 @@ class Pick_settings {
 			);
 			
 			foreach( $setting['options'] as $option ) :
-			add_settings_field( $option['id'], $option['title'], array($this,'pick_settings_field_generator'), $this->get_current_page(), $key, $option );
+
+                $option_id      = isset( $option['id'] ) ? $option['id'] : '';
+                $option_title   = isset( $option['title'] ) ? $option['title'] : '';
+
+                if( empty( $option_id ) ) continue;
+
+			    add_settings_field( $option_id, $option_title, array($this,'pick_settings_field_generator'), $this->get_current_page(), $key, $option );
+
 			endforeach;
 		
 		endforeach;
@@ -74,6 +85,9 @@ class Pick_settings {
 		if( empty( $id ) ) return;
 		
 		try{
+
+            do_action( "pick_settings_before_$id", $option );
+
 			if( isset($option['type']) && $option['type'] === 'select' ) 		$this->pick_settings_generate_select( $option );
 			elseif( isset($option['type']) && $option['type'] === 'checkbox')	$this->pick_settings_generate_checkbox( $option );
 			elseif( isset($option['type']) && $option['type'] === 'radio')		$this->pick_settings_generate_radio( $option );
@@ -89,6 +103,8 @@ class Pick_settings {
 			do_action( "pick_settings_$id", $option );
 			
 			if( !empty( $details ) ) echo "<p class='description'>$details</p>";
+
+            do_action( "pick_settings_after_$id", $option );
 		}
 		catch(Pick_error $e) {
 			echo $e->get_error_message();
@@ -216,12 +232,13 @@ class Pick_settings {
 		
 		$id 			= isset( $option['id'] ) ? $option['id'] : "";
 		$placeholder 	= isset( $option['placeholder'] ) ? $option['placeholder'] : "";
+        $autocomplete 	= isset( $option['autocomplete'] ) ? $option['autocomplete'] : "";
 		$value 			= get_option( $id );
 		
-		wp_register_style( 'jquery-ui', 'http://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css' );
+		wp_register_style( 'jquery-ui', 'https://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css' );
 		wp_enqueue_style( 'jquery-ui' );
 		
-		echo "<input type='text' class='regular-text' name='$id' id='$id' placeholder='$placeholder' value='$value' />";
+		echo "<input type='text' class='regular-text' name='$id' id='$id' autocomplete='$autocomplete' placeholder='$placeholder' value='$value' />";
 		echo "<script>jQuery(document).ready(function($) { $('#$id').datepicker();});</script>";
 	}
 	
@@ -240,9 +257,10 @@ class Pick_settings {
 		
 		$id 			= isset( $option['id'] ) ? $option['id'] : "";
 		$placeholder 	= isset( $option['placeholder'] ) ? $option['placeholder'] : "";
+        $autocomplete 	= isset( $option['autocomplete'] ) ? $option['autocomplete'] : "";
 		$value 	 		= get_option( $id );
 		
-		echo "<input type='text' class='regular-text' name='$id' id='$id' placeholder='$placeholder' value='$value' />";
+		echo "<input type='text' class='regular-text' name='$id' id='$id' placeholder='$placeholder' autocomplete='$autocomplete' value='$value' />";
 	}
 	
 	public function pick_settings_generate_number( $option ){
@@ -335,40 +353,52 @@ class Pick_settings {
 		return $whitelist_options;
 	}
 	
-	public function pick_settings_display_function(){
+	public function pick_settings_display_function()
+    {
 
-		echo "<div class='wrap'>";
-		echo "<h2>{$this->get_menu_page_title()}</h2><br>";
-		
-		parse_str( $_SERVER['QUERY_STRING'], $nav_menu_url_args );
-		global $pagenow;
-		
-		settings_errors();
-		
-		$tab_count 	 = 0;
-		echo "<nav class='nav-tab-wrapper'>";
-		foreach( $this->get_pages() as $page_id => $page ): $tab_count++;
-			
-			$active = $this->get_current_page() == $page_id ? 'nav-tab-active' : '';
-			$nav_menu_url_args['tab'] = $page_id;
-			$nav_menu_url = http_build_query( $nav_menu_url_args );
-			
-			echo "<a href='$pagenow?$nav_menu_url' class='nav-tab $active'>{$page['page_nav']}</a>";
+        echo "<div class='wrap'>";
+        echo "<h2>{$this->get_menu_page_title()}</h2><br>";
 
-		endforeach;
+        parse_str($_SERVER['QUERY_STRING'], $nav_menu_url_args);
+        global $pagenow;
+
+        settings_errors();
+
+        $tab_count = 0;
+        echo "<nav class='nav-tab-wrapper'>";
+        foreach ($this->get_pages() as $page_id => $page): $tab_count++;
+
+            $active = $this->get_current_page() == $page_id ? 'nav-tab-active' : '';
+            $nav_menu_url_args['tab'] = $page_id;
+            $nav_menu_url = http_build_query($nav_menu_url_args);
+
+            echo "<a href='$pagenow?$nav_menu_url' class='nav-tab $active' style='border-top-left-radius: 3px; border-top-right-radius: 3px;'>{$page['page_nav']}</a>";
+
+        endforeach;
         echo "</nav>";
 
-		echo "<form class='pick_settings_form' action='options.php' method='post'>";
-		
-		settings_fields( $this->get_current_page() );
-		do_settings_sections( $this->get_current_page() );
-		do_action( $this->get_current_page() );
-		
-		$show_submit_button = $this->show_submit_button();
-		if( $show_submit_button ) submit_button();
-		
-		echo "</form>";
-		
+        do_action( 'pick_settings_before_page_' . $this->get_current_page() );
+
+        if( $this->show_submit_button() ) {
+
+            echo "<form class='pick_settings_form' action='options.php' method='post'>";
+        }
+
+        settings_fields($this->get_current_page());
+        do_settings_sections($this->get_current_page());
+
+        if( $this->show_submit_button() ) {
+
+            foreach( $_GET as $key => $value ) {
+                printf( '<input type="hidden" name="%s" value="%s"/>', $key, $value );
+            }
+
+            submit_button();
+            echo "</form>";
+        }
+
+        do_action( 'pick_settings_page_' . $this->get_current_page() );
+
 		if( $this->show_sidebar() ) {
 		
 			echo "<div class='pick_settings_sidebar'>";
@@ -416,7 +446,9 @@ class Pick_settings {
 
 			});</script>";
 		}
-		
+
+        do_action( 'pick_settings_after_page_' . $this->get_current_page() );
+
 		echo "</div>";		
 	}
 	
@@ -428,14 +460,26 @@ class Pick_settings {
 		if( strpos( $string, 'PICK_PAGES_ARRAY' ) !== false ) return $this->get_pages_array();
 		if( strpos( $string, 'PICK_TAX_' ) !== false ) return $this->get_taxonomies_array( $string, $option );
 		if( strpos( $string, 'PICK_POSTS_' ) !== false ) return $this->get_posts_array( $string, $option );
-		
+
+		if( $string === 'PICK_TIME_ZONES' ) return $this->get_timezones_array( $option );
 		
 		return array();
 	}
+
+	public function get_timezones_array( $option ){
+
+        $arr_items = array('' => __('Select your choice'));
+
+        foreach( timezone_identifiers_list() as $time_zone ){
+            $arr_items[ $time_zone ] = str_replace( '/', ' > ', $time_zone );
+        }
+
+        return $arr_items;
+    }
 	
 	public function get_posts_array( $string, $option ){
 		
-		$arr_posts = array();
+		$arr_posts = array('' => __('Select your choice'));
 		
 		preg_match_all( "/\%([^\]]*)\%/", $string, $matches );
 		
@@ -456,7 +500,7 @@ class Pick_settings {
 	
 	public function get_taxonomies_array( $string, $option ){
 		
-		$taxonomies = array();
+		$taxonomies = array('' => __('Select your choice'));
 		
 		preg_match_all( "/\%([^\]]*)\%/", $string, $matches );
 		
@@ -476,7 +520,7 @@ class Pick_settings {
 	
 	public function get_pages_array(){
 		
-		$pages_array = array();
+		$pages_array = array('' => __('Select your choice'));
 		foreach( get_pages() as $page ) $pages_array[ $page->ID ] = $page->post_title;
 		
 		return apply_filters( 'FILTER_PICK_PAGES_ARRAY', $pages_array );
@@ -504,11 +548,13 @@ class Pick_settings {
 	private function show_sidebar(){
 		return isset( $this->data['show_sidebar'] ) ? $this->data['show_sidebar'] : false;
 	}
+
 	private function show_submit_button(){
 		return isset( $this->get_pages()[$this->get_current_page()]['show_submit'] )
 		? $this->get_pages()[$this->get_current_page()]['show_submit'] 
 		: true;
 	}
+
 	public function get_current_page(){
 		
 		$all_pages 		= $this->get_pages();
@@ -517,65 +563,87 @@ class Pick_settings {
 		
 		return isset( $_GET['tab'] ) ? sanitize_text_field($_GET['tab']) : $default_tab;
 	}
+
 	private function get_menu_type(){
 		if( isset( $this->data['menu_type'] ) ) return $this->data['menu_type'];
 		else return "main";
 	}
+
 	private function get_pages(){
 		if( isset( $this->data['pages'] ) ) $pages = $this->data['pages'];
 		else return array();
 
 		$pages_sorted = array();
-		foreach ($pages as $page_key => $page) $pages_sorted[$page_key] = $page['priority'];
+		$increment = 0;
+
+		foreach ($pages as $page_key => $page) {
+
+            $increment += 5;
+            $priority   = isset( $page['priority'] ) ? $page['priority'] : $increment;
+
+		    $pages_sorted[$page_key] = $priority;
+        }
 		array_multisort($pages_sorted, SORT_ASC, $pages);
 
 		return $pages;
 	}
+
 	private function get_settings_fields(){
 		if( isset( $this->get_pages()[$this->get_current_page()]['page_settings'] ) ) return $this->get_pages()[$this->get_current_page()]['page_settings'];
 		else return array();
 	}
+
 	private function get_settings_name(){
 		if( isset( $this->data['settings_name'] ) ) return $this->data['settings_name'];
 		else return "my_custom_settings";
 	}
+
 	private function get_menu_position(){
 		if( isset( $this->data['position'] ) ) return $this->data['position'];
 		else return "";
 	}
+
 	private function get_menu_icon(){
 		if( isset( $this->data['menu_icon'] ) ) return $this->data['menu_icon'];
 		else return "";
 	}
-	private function get_menu_slug(){
+
+	public function get_menu_slug(){
 		if( isset( $this->data['menu_slug'] ) ) return $this->data['menu_slug'];
 		else return "my-custom-settings";
 	}
+
 	private function get_capability(){
 		if( isset( $this->data['capability'] ) ) return $this->data['capability'];
 		else return "manage_options";
 	}
+
 	private function get_menu_page_title(){
 		if( isset( $this->data['menu_page_title'] ) ) return $this->data['menu_page_title'];
 		else return "My Custom Menu";
 	}
+
 	private function get_menu_name(){
 		if( isset( $this->data['menu_name'] ) ) return $this->data['menu_name'];
 		else return "Menu Name";
 	}
+
 	private function get_menu_title(){
 		if( isset( $this->data['menu_title'] ) ) return $this->data['menu_title'];
 		else return "Menu Title";
 	}
+
 	private function get_page_title(){
 		if( isset( $this->data['page_title'] ) ) return $this->data['page_title'];
 		else return "Page Title";
 	}
+
 	private function add_in_menu(){
 		if( isset( $this->data['add_in_menu'] ) && $this->data['add_in_menu'] ) return true;
 		else return false;
 	}
-	private function get_parent_slug(){
+
+	public function get_parent_slug(){
 		if( isset( $this->data['parent_slug'] ) && $this->data['parent_slug'] ) return $this->data['parent_slug'];
 		else return "";
 	}
@@ -640,13 +708,9 @@ class Pick_settings {
 		$notice_message_2	= sprintf("<i>Download the latest version and replace with your version(%s) here <b>%s</b></i>", $current_version, __FILE__ );
 		
 		$message = __( 'Irks! An error has occurred.', 'sample-text-domain' );
-
-		// printf( '<div class="%1$s"><p>%2$s</p><p>%3$s</p></div>', esc_attr( "notice notice-warning is-dismissible" ), $notice_message, $notice_message_2 ); 
-		
 		
 		printf( '<div class="%1$s"><p>%2$s</p><p>%3$s</p></div>', esc_attr( "notice notice-warning is-dismissible" ), $notice_message, $notice_message_2 ); 
 	}
-	
 }
 
 }
