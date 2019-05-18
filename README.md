@@ -1,7 +1,7 @@
 # PB Settings
 An easy option and settigns management framwork for WordPress, Developer friendly and elegant look build with native WordPress UI,  
 
-## Version: 1.1.0
+## Version: 3.0.0
 
 ### How to use
 
