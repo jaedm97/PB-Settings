@@ -1,11 +1,11 @@
-# Pick Settings
+# PB Settings
 An easy option and settigns management framwork for WordPress, Developer friendly and elegant look build with native WordPress UI,  
 
 ## Version: 1.1.0
 
 ### How to use
 
-#### Adding Pick_settings class file
+#### Adding PB_Settings class file
 ```php
 include "class-pick-settings.php";
 ```
@@ -23,7 +23,7 @@ $args = array(
 	'menu_icon'       => "dashicons-hammer",
 );
 
-$Pick_settings = new Pick_settings( $args );
+$PB_Settings = new PB_Settings( $args );
 ```
 
 #### Design options for your menu
@@ -120,7 +120,7 @@ $args = array(
 	),
 );
 
-$Pick_settings = new Pick_settings( $args );
+$PB_Settings = new PB_Settings( $args );
 ```
 
 #### Add More Pages
@@ -164,7 +164,7 @@ $args = array(
 	),
 );
 
-$Pick_settings = new Pick_settings( $args );
+$PB_Settings = new PB_Settings( $args );
 ```
 
 #### Add submenu under any main menu
@@ -180,7 +180,7 @@ $sub_args = array(
 	'parent_slug' => "my-settings",
 );
 
-$Pick_settings_sub = new Pick_settings( $sub_args );
+$Pick_settings_sub = new PB_Settings( $sub_args );
 ```
 
 #### Design options for your submenu
@@ -225,7 +225,7 @@ $sub_args = array(
 	),
 );
 
-$Pick_settings_sub = new Pick_settings( $sub_args );
+$Pick_settings_sub = new PB_Settings( $sub_args );
 ```
 
 
