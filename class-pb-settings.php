@@ -5,11 +5,12 @@
  * Quick settings page generator for WordPress
  *
  * @package PB_Settings
- * @version 3.0.2
+ * @version 3.0.3
  * @author Pluginbazar
  * @copyright 2019 Pluginbazar.com
  * @see https://github.com/jaedm97/PB-Settings
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }  // if direct access
@@ -185,28 +186,27 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				return;
 			}
 
-			try {
+			do_action( "pb_settings_before_$id", $option );
 
-				do_action( "pb_settings_before_$id", $option );
-
-				if ( isset( $option['type'] ) && ! empty( $field_type = $option['type'] ) ) {
-					call_user_func( array( $this, "generate_$field_type" ), $option );
-				}
-
-				if ( isset( $option['disabled'] ) && $option['disabled'] ) {
-					printf( '<span style="background: #ffe390eb;margin-left: 10px;padding: 5px 12px;font-size: 12px;border-radius: 3px;color: #717171;">%s</span>', $this->disabled_notice );
-				}
-
-				do_action( "pb_settings_$id", $option );
-
-				if ( ! empty( $details ) ) {
-					echo "<p class='description'>$details</p>";
-				}
-
-				do_action( "pb_settings_after_$id", $option );
-			} catch ( PB_Error $e ) {
-				echo $e->get_error_message();
+			if ( isset( $option['type'] ) && ! empty( $field_type = $option['type'] ) ) {
+				call_user_func( array( $this, "generate_$field_type" ), $option );
 			}
+
+			if ( isset( $option['disabled'] ) && $option['disabled'] ) {
+				printf( '<span style="background: #ffe390eb;margin-left: 10px;padding: 5px 12px;font-size: 12px;border-radius: 3px;color: #717171;">%s</span>', $this->disabled_notice );
+			}
+
+			do_action( "pb_settings_before_option", $option );
+
+			do_action( "pb_settings_$id", $option );
+
+			if ( ! empty( $details ) ) {
+				echo "<p class='description'>$details</p>";
+			}
+
+			do_action( "pb_settings_after_option", $option );
+
+			do_action( "pb_settings_after_$id", $option );
 		}
 
 
@@ -322,7 +322,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		function generate_media( $option ) {
 
 			$id          = isset( $option['id'] ) ? $option['id'] : "";
-			$unique_id   = str_replace( array( '[', ']' ), '_', $id );
+			$field_id    = str_replace( array( '[', ']' ), '_', $id );
 			$value       = isset( $option['value'] ) ? $option['value'] : get_option( $id );
 			$disabled    = isset( $option['disabled'] ) && $option['disabled'] ? 'disabled' : '';
 			$media_url   = wp_get_attachment_url( $value );
@@ -341,39 +341,40 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 
 				<?php if ( in_array( $media_ext, array( 'mp3', 'wav' ) ) ) : ?>
 
-                    <div id="media_preview_<?php echo esc_attr( $unique_id ); ?>"
+                    <div id="media_preview_<?php echo esc_attr( $field_id ); ?>"
                          class="dashicons dashicons-format-audio" style="font-size: 70px;display: inline;"></div>
                     <div><?php echo esc_html( $media_title ); ?></div>
 
 				<?php else : ?>
-                    <img id="media_preview_<?php echo esc_attr( $unique_id ); ?>"
+                    <img id="media_preview_<?php echo esc_attr( $field_id ); ?>"
                          src="<?php echo esc_url( $media_url ); ?>" style="width:100%"/>
 				<?php endif; ?>
 
             </div>
             <input type="hidden" name="<?php echo esc_attr( $id ); ?>"
-                   id="media_input_<?php echo esc_attr( $unique_id ); ?>" value="<?php echo esc_attr( $value ); ?>"/>
+                   id="media_input_<?php echo esc_attr( $field_id ); ?>" value="<?php echo esc_attr( $value ); ?>"/>
             <div class="button" <?php echo esc_attr( $disabled ); ?>
-                 id="media_upload_<?php echo esc_attr( $unique_id ); ?>"><?php esc_html_e( 'Upload' ); ?></div>
+                 id="media_upload_<?php echo esc_attr( $field_id ); ?>"><?php esc_html_e( 'Upload' ); ?></div>
 
-            <?php if( ! empty( $value ) ) : ?>
-                <div class="button button-primary" id="media_upload_<?php echo esc_attr( $unique_id ); ?>_remove"><?php esc_html_e( 'Remove' ); ?></div>
-            <?php endif; ?>
+			<?php if ( ! empty( $value ) ) : ?>
+                <div class="button button-primary"
+                     id="media_upload_<?php echo esc_attr( $field_id ); ?>_remove"><?php esc_html_e( 'Remove' ); ?></div>
+			<?php endif; ?>
 
             <script>
                 jQuery(document).ready(function ($) {
 
 
-                    $(document).on('click', '#media_upload_<?php echo esc_attr( $unique_id ); ?>_remove', function () {
-                        $(this).parent().find('.media_preview img').attr( 'src', '');
+                    $(document).on('click', '#media_upload_<?php echo esc_attr( $field_id ); ?>_remove', function () {
+                        $(this).parent().find('.media_preview img').attr('src', '');
                         $(this).parent().find('input[name="_thumbnail_id"]').val('');
                     });
 
-                    $(document).on('click', '#media_upload_<?php echo esc_attr( $unique_id ); ?>', function () {
+                    $(document).on('click', '#media_upload_<?php echo esc_attr( $field_id ); ?>', function () {
                         var send_attachment_bkp = wp.media.editor.send.attachment;
                         wp.media.editor.send.attachment = function (props, attachment) {
-                            $("#media_preview_<?php echo esc_attr( $unique_id ); ?>").attr('src', attachment.url);
-                            $("#media_input_<?php echo esc_attr( $unique_id ); ?>").val(attachment.id);
+                            $("#media_preview_<?php echo esc_attr( $field_id ); ?>").attr('src', attachment.url);
+                            $("#media_input_<?php echo esc_attr( $field_id ); ?>").val(attachment.id);
                             wp.media.editor.send.attachment = send_attachment_bkp;
                         };
                         wp.media.editor.open($(this));
@@ -457,11 +458,9 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 
 
 		/**
-		 * Generate Field - Select2
+		 * Generate Select 2
 		 *
 		 * @param $option
-		 *
-		 * @throws PB_Error
 		 */
 		function generate_select2( $option ) {
 
@@ -636,7 +635,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		function generate_colorpicker( $option ) {
 
 			$id          = isset( $option['id'] ) ? $option['id'] : "";
-			$unique_id   = str_replace( array( '[', ']' ), '_', $id );
+			$field_id    = str_replace( array( '[', ']' ), '_', $id );
 			$placeholder = isset( $option['placeholder'] ) ? $option['placeholder'] : "";
 			$value       = isset( $option['value'] ) ? $option['value'] : get_option( $id );
 
@@ -650,16 +649,16 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			?>
             <input type="text"
                    name="<?php echo esc_attr( $id ); ?>"
-                   id="<?php echo esc_attr( $unique_id ); ?>"
+                   id="<?php echo esc_attr( $field_id ); ?>"
                    placeholder="<?php echo esc_attr( $placeholder ); ?>"
                    value="<?php echo esc_attr( $value ); ?>"/>
 
             <script>
                 jQuery(document).ready(function ($) {
-                    $('#<?php echo esc_attr( $unique_id ); ?>').wpColorPicker();
+                    $('#<?php echo esc_attr( $field_id ); ?>').wpColorPicker();
 
 					<?php if( isset( $option['disabled'] ) && $option['disabled'] ) : ?>
-                    $('#<?php echo esc_attr( $unique_id ); ?>').parent().parent().parent().find('button.wp-color-result').prop('disabled', true);
+                    $('#<?php echo esc_attr( $field_id ); ?>').parent().parent().parent().find('button.wp-color-result').prop('disabled', true);
 					<?php endif; ?>
                 });
             </script>
@@ -760,8 +759,6 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 * Generate Field - Select
 		 *
 		 * @param $option
-		 *
-		 * @throws PB_Error
 		 */
 		function generate_select( $option ) {
 
@@ -800,8 +797,6 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 * Generate Field - Checkbox
 		 *
 		 * @param $option
-		 *
-		 * @throws PB_Error
 		 */
 		function generate_checkbox( $option ) {
 
@@ -835,16 +830,14 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 * Generate Field - Radio
 		 *
 		 * @param $option
-		 *
-		 * @throws PB_Error
 		 */
 		function generate_radio( $option ) {
 
-			$id       = isset( $option['id'] ) ? $option['id'] : "";
-			$args     = isset( $option['args'] ) ? $option['args'] : array();
-			$args     = is_array( $args ) ? $args : $this->generate_args_from_string( $args, $option );
-			$value    = isset( $option['value'] ) ? $option['value'] : get_option( $id );
-			$disabled = isset( $option['disabled'] ) && $option['disabled'] ? 'disabled' : '';
+			$option_id = isset( $option['id'] ) ? $option['id'] : "";
+			$args      = isset( $option['args'] ) ? $option['args'] : array();
+			$args      = is_array( $args ) ? $args : $this->generate_args_from_string( $args, $option );
+			$value     = isset( $option['value'] ) ? $option['value'] : get_option( $option_id );
+			$disabled  = isset( $option['disabled'] ) && $option['disabled'] ? 'disabled' : '';
 
 			if ( empty( $value ) || ! $value ) {
 				$value = isset( $option['default'] ) ? $option['default'] : $value;
@@ -854,10 +847,9 @@ if ( ! class_exists( 'PB_Settings' ) ) {
             <fieldset>
 				<?php
 				foreach ( $args as $key => $val ) {
-
 					$checked = is_array( $value ) && in_array( $key, $value ) ? "checked" : "";
-					printf( '<label for="%1$s-%2$s"><input %3$s %4$s type="radio" id="%1$s-%2$s" name="%1$s[]" value="%2$s"></label>%5$s<br>',
-						$id, $key, $disabled, $checked, $val
+					printf( '<label><input %1$s %2$s type="radio" name="%3$s[]" value="%4$s">%5$s</label><br>',
+						$disabled, $checked, $option_id, $key, $val
 					);
 				}
 				?>
@@ -979,7 +971,6 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 * @param $option
 		 *
 		 * @return array|mixed|void
-		 * @throws PB_Error
 		 */
 		function generate_args_from_string( $string, $option ) {
 
@@ -1027,8 +1018,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 * @param $string
 		 * @param $option
 		 *
-		 * @return array
-		 * @throws PB_Error
+		 * @return array | WP_Error
 		 */
 		function get_posts_array( $string, $option ) {
 
@@ -1043,7 +1033,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			}
 
 			if ( ! post_type_exists( $post_type ) ) {
-				throw new PB_Error( "Post type <strong>$post_type</strong> doesn't exists!" );
+				return new WP_Error( 'not_found', sprintf( 'Post type <strong>%s</strong> does not exists !', $post_type ) );
 			}
 
 			$wp_query = isset( $option['wp_query'] ) ? $option['wp_query'] : array();
@@ -1065,8 +1055,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 * @param $string
 		 * @param $option
 		 *
-		 * @return array
-		 * @throws PB_Error
+		 * @return array|WP_Error
 		 */
 		function get_taxonomies_array( $string, $option ) {
 
@@ -1077,11 +1066,11 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			if ( isset( $matches[1][0] ) ) {
 				$taxonomy = $matches[1][0];
 			} else {
-				throw new PB_Error( 'Invalid taxonomy declaration !' );
+				return new WP_Error( 'invalid_declaration', 'Invalid taxonomy declaration !' );
 			}
 
 			if ( ! taxonomy_exists( $taxonomy ) ) {
-				throw new PB_Error( "Taxonomy <strong>$taxonomy</strong> doesn't exists !" );
+				return new WP_Error( 'not_found', sprintf( 'Taxonomy <strong>%s</strong> does not exists !', $taxonomy ) );
 			}
 
 			$terms = get_terms( $taxonomy, array(
@@ -1443,36 +1432,6 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			}
 
 			return apply_filters( 'pb_settings_option_value', $option_value, $option_id, $option );
-		}
-	}
-
-}
-
-
-if ( ! class_exists( 'PB_Error' ) ) {
-	/**
-	 * Class PB_Error
-	 */
-	class PB_Error extends Exception {
-
-		/**
-		 * PB_Error constructor.
-		 *
-		 * @param $message
-		 * @param int $code
-		 * @param Exception|null $previous
-		 */
-		function __construct( $message, $code = 0, Exception $previous = null ) {
-			parent::__construct( $message, $code, $previous );
-		}
-
-		/**
-		 * Return Error Message
-		 *
-		 * @return string
-		 */
-		function get_error_message() {
-			return sprintf( '<p class="notice notice-error" style="padding: 10px;">%s</p>', $this->getMessage() );
 		}
 	}
 }
