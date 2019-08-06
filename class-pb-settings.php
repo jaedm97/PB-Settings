@@ -5,7 +5,7 @@
  * Quick settings page generator for WordPress
  *
  * @package PB_Settings
- * @version 3.0.4
+ * @version 3.0.5
  * @author Pluginbazar
  * @copyright 2019 Pluginbazar.com
  * @see https://github.com/jaedm97/PB-Settings
@@ -106,6 +106,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 					$option_id = isset( $option['id'] ) ? $option['id'] : '';
 					$option_title = isset( $option['title'] ) ? $option['title'] : '';
 					$option_class = isset( $option['class'] ) ? $option['class'] : '';
+					$option_type  = isset( $option['type'] ) ? $option['type'] : '';
 					$field_id     = str_replace( array( '[', ']' ), '', $option_id );
 
 					if ( $post_id && ! empty( $post_id ) ) {
@@ -122,7 +123,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 					}
 
 					?>
-                    <div class="wps-field <?php echo esc_attr( $option_class ); ?>">
+                    <div class="wps-field <?php echo esc_attr( implode( ' ', array( $option_class, $option_type ) ) ); ?>">
                         <label for="<?php echo esc_attr( $field_id ); ?>"
                                class="wps-field-inline wps-field-title"><?php echo esc_html( $option_title ); ?></label>
 
@@ -873,16 +874,18 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 */
 		function generate_image_select( $option ) {
 
-			$option_id = isset( $option['id'] ) ? $option['id'] : "";
-			$args      = isset( $option['args'] ) ? $option['args'] : array();
-			$value     = isset( $option['value'] ) ? $option['value'] : get_option( $option_id );
-			$disabled  = isset( $option['disabled'] ) && $option['disabled'] ? 'disabled' : '';
-			$multiple  = isset( $option['multiple'] ) && $option['multiple'] ? true : false;
+			$option_id  = isset( $option['id'] ) ? $option['id'] : "";
+			$args       = isset( $option['args'] ) ? $option['args'] : array();
+			$value      = isset( $option['value'] ) ? $option['value'] : get_option( $option_id );
+			$disabled   = isset( $option['disabled'] ) && $option['disabled'] ? 'disabled' : '';
+			$multiple   = isset( $option['multiple'] ) && $option['multiple'] ? true : false;
 			$input_type = $multiple ? 'checkbox' : 'radio';
 
 			if ( empty( $value ) || ! $value ) {
 				$value = isset( $option['default'] ) ? $option['default'] : $value;
 			}
+
+			$value = is_array( $value ) ? $value : array( $value );
 
 			?>
             <div class="image-select">
@@ -903,6 +906,8 @@ if ( ! class_exists( 'PB_Settings' ) ) {
                         width: 120px;
                         margin: 0 15px 15px 0;
                         position: relative;
+                        border: 1px solid #d1d1d1;
+                        border-radius: 5px;
                     }
 
                     .image-select > label.checked:after {
@@ -927,6 +932,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
                     .image-select > label > img {
                         width: 100%;
                         transition: 0.3s;
+                        border-radius: 5px;
                     }
 
                     .image-select > label.checked > img {
@@ -937,11 +943,11 @@ if ( ! class_exists( 'PB_Settings' ) ) {
                 <script>
                     jQuery(document).ready(function ($) {
                         $('.image-select > label > input').on('change', function () {
-                            if( $(this).attr('type') === 'radio' ) {
+                            if ($(this).attr('type') === 'radio') {
                                 $(this).parent().parent().find('> label').removeClass('checked');
                             }
 
-                            if( $(this).is(":checked") ) {
+                            if ($(this).is(":checked")) {
                                 $(this).parent().addClass('checked');
                             } else {
                                 $(this).parent().removeClass('checked');
