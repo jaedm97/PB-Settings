@@ -17,7 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 
 if ( ! class_exists( 'PB_Settings' ) ) {
-
 	class PB_Settings {
 
 		public $data = array();
