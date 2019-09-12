@@ -47,6 +47,115 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 
 
 		/**
+		 * Register Taxonomy
+		 *
+		 * @param $tax_name
+		 * @param $obj_name
+		 * @param array $args
+		 */
+		function register_taxonomy( $tax_name, $obj_name, $args = array() ) {
+
+			if ( taxonomy_exists( $tax_name ) ) {
+				return;
+			}
+
+			$singular = isset( $args['singular'] ) ? $args['singular'] : '';
+			$plural   = isset( $args['plural'] ) ? $args['plural'] : '';
+			$labels   = isset( $args['labels'] ) ? $args['labels'] : array();
+
+			$args = array_merge( array(
+				'description'         => sprintf( __( 'This is where you can create and manage %s.', 'wp-poll' ), $plural ),
+				'public'              => true,
+				'show_ui'             => true,
+				'capability_type'     => 'post',
+				'map_meta_cap'        => true,
+				'publicly_queryable'  => true,
+				'exclude_from_search' => false,
+				'hierarchical'        => false,
+				'rewrite'             => true,
+				'query_var'           => true,
+				'show_in_nav_menus'   => true,
+				'show_in_menu'        => true,
+			), $args );
+
+			$args['labels'] = array_merge( array(
+				'name'               => sprintf( __( '%s', 'wp-poll' ), $plural ),
+				'singular_name'      => $singular,
+				'menu_name'          => __( $singular, 'wp-poll' ),
+				'all_items'          => sprintf( __( '%s', 'wp-poll' ), $plural ),
+				'add_new'            => sprintf( __( 'Add %s', 'wp-poll' ), $singular ),
+				'add_new_item'       => sprintf( __( 'Add %s', 'wp-poll' ), $singular ),
+				'edit'               => __( 'Edit', 'wp-poll' ),
+				'edit_item'          => sprintf( __( '%s Details', 'wp-poll' ), $singular ),
+				'new_item'           => sprintf( __( 'New %s', 'wp-poll' ), $singular ),
+				'view'               => sprintf( __( 'View %s', 'wp-poll' ), $singular ),
+				'view_item'          => sprintf( __( 'View %s', 'wp-poll' ), $singular ),
+				'search_items'       => sprintf( __( 'Search %s', 'wp-poll' ), $plural ),
+				'not_found'          => sprintf( __( 'No %s found', 'wp-poll' ), $plural ),
+				'not_found_in_trash' => sprintf( __( 'No %s found in trash', 'wp-poll' ), $plural ),
+				'parent'             => sprintf( __( 'Parent %s', 'wp-poll' ), $singular ),
+			), $labels );
+
+			register_taxonomy( $tax_name, $obj_name, apply_filters( "pb_register_taxonomy_$tax_name", $args, $obj_name ) );
+		}
+
+
+		/**
+		 * Register Post Type
+		 *
+		 * @param $post_type
+		 * @param array $args
+		 */
+		function register_post_type( $post_type, $args = array() ) {
+
+			if ( post_type_exists( $post_type ) ) {
+				return;
+			}
+
+			$singular = isset( $args['singular'] ) ? $args['singular'] : '';
+			$plural   = isset( $args['plural'] ) ? $args['plural'] : '';
+			$labels   = isset( $args['labels'] ) ? $args['labels'] : array();
+
+			$args = array_merge( array(
+				'description'         => sprintf( __( 'This is where you can create and manage %s.' ), $plural ),
+				'public'              => true,
+				'show_ui'             => true,
+				'capability_type'     => 'post',
+				'map_meta_cap'        => true,
+				'publicly_queryable'  => true,
+				'exclude_from_search' => false,
+				'hierarchical'        => false,
+				'rewrite'             => true,
+				'query_var'           => true,
+				'supports'            => array( 'title', 'thumbnail', 'editor', 'author' ),
+				'show_in_nav_menus'   => true,
+				'show_in_menu'        => true,
+				'menu_icon'           => '',
+			), $args );
+
+			$args['labels'] = array_merge( array(
+				'name'               => sprintf( __( '%s' ), $plural ),
+				'singular_name'      => $singular,
+				'menu_name'          => __( $singular ),
+				'all_items'          => sprintf( __( '%s' ), $plural ),
+				'add_new'            => sprintf( __( 'Add %s' ), $singular ),
+				'add_new_item'       => sprintf( __( 'Add %s' ), $singular ),
+				'edit'               => __( 'Edit' ),
+				'edit_item'          => sprintf( __( 'Edit %s' ), $singular ),
+				'new_item'           => sprintf( __( 'New %s' ), $singular ),
+				'view'               => sprintf( __( 'View %s' ), $singular ),
+				'view_item'          => sprintf( __( 'View %s' ), $singular ),
+				'search_items'       => sprintf( __( 'Search %s' ), $plural ),
+				'not_found'          => sprintf( __( 'No %s found' ), $plural ),
+				'not_found_in_trash' => sprintf( __( 'No %s found in trash' ), $plural ),
+				'parent'             => sprintf( __( 'Parent %s' ), $singular ),
+			), $labels );
+
+			register_post_type( $post_type, apply_filters( "pb_register_post_type_$post_type", $args ) );
+		}
+
+
+		/**
 		 * Add Menu in WordPress Admin Menu
 		 */
 		function add_menu_in_admin_menu() {
@@ -122,7 +231,10 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 					}
 
 					?>
-                    <div class="wps-field <?php echo esc_attr( implode( ' ', array( $option_class, $option_type ) ) ); ?>">
+                    <div class="wps-field <?php echo esc_attr( implode( ' ', array(
+						$option_class,
+						$option_type
+					) ) ); ?>">
                         <label for="<?php echo esc_attr( $field_id ); ?>"
                                class="wps-field-inline wps-field-title"><?php echo esc_html( $option_title ); ?></label>
 
@@ -200,8 +312,8 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				}
 			}
 
-			if ( isset( $option['disabled'] ) && $option['disabled'] ) {
-				printf( '<span style="background: #ffe390eb;margin-left: 10px;padding: 5px 12px;font-size: 12px;border-radius: 3px;color: #717171;">%s</span>', $this->disabled_notice );
+			if ( isset( $option['disabled'] ) && $option['disabled'] && ! empty( $this->disabled_notice ) ) {
+				printf( '<span class="disabled-notice" style="background: #ffe390eb;margin-left: 10px;padding: 5px 12px;font-size: 12px;border-radius: 3px;color: #717171;">%s</span>', $this->disabled_notice );
 			}
 
 			do_action( "pb_settings_before_option", $option );
@@ -372,10 +484,9 @@ if ( ! class_exists( 'PB_Settings' ) ) {
             <script>
                 jQuery(document).ready(function ($) {
 
-
                     $(document).on('click', '#media_upload_<?php echo esc_attr( $field_id ); ?>_remove', function () {
                         $(this).parent().find('.media_preview img').attr('src', '');
-                        $(this).parent().find('input[name="_thumbnail_id"]').val('');
+                        $(this).parent().find('#media_input_<?php echo esc_attr( $field_id ); ?>').val('');
                     });
 
                     $(document).on('click', '#media_upload_<?php echo esc_attr( $field_id ); ?>', function () {
@@ -744,6 +855,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 
 			$id          = isset( $option['id'] ) ? $option['id'] : "";
 			$placeholder = isset( $option['placeholder'] ) ? $option['placeholder'] : "";
+			$rows        = isset( $option['rows'] ) ? $option['rows'] : 4;
 			$value       = isset( $option['value'] ) ? $option['value'] : get_option( $id );
 			$required    = isset( $option['required'] ) ? $option['required'] : false;
 			$required    = $required ? "required='required'" : '';
@@ -755,7 +867,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 
 			?>
             <textarea cols="40" <?php echo esc_attr( $disabled ); ?> <?php echo esc_attr( $required ); ?>
-                      rows="5"
+                      rows="<?php echo esc_attr( $rows ); ?>"
                       name="<?php echo esc_attr( $id ); ?>"
                       id="<?php echo esc_attr( $id ); ?>"
                       placeholder="<?php echo esc_attr( $placeholder ); ?>"><?php echo esc_html( $value ); ?></textarea>
@@ -771,6 +883,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		function generate_select( $option ) {
 
 			$id       = isset( $option['id'] ) ? $option['id'] : "";
+			$field_id = str_replace( array( '[', ']' ), '_', $id );
 			$args     = isset( $option['args'] ) ? $option['args'] : array();
 			$args     = is_array( $args ) ? $args : $this->generate_args_from_string( $args, $option );
 			$value    = isset( $option['value'] ) ? $option['value'] : get_option( $id );
@@ -785,7 +898,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			?>
             <select <?php echo esc_attr( $disabled ); ?> <?php echo esc_attr( $required ); ?>
                     name="<?php echo esc_attr( $id ); ?>"
-                    id="<?php echo esc_attr( $id ); ?>">
+                    id="<?php echo esc_attr( $field_id ); ?>">
 
 				<?php
 
