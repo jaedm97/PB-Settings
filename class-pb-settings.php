@@ -363,12 +363,11 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 
 			?>
             <div id="media_preview_<?php echo esc_attr( $id ); ?>">
-				<?php echo esc_html( $html ); ?>
+				<?php echo $html; ?>
             </div>
             <div class='button' <?php echo esc_attr( $disabled ); ?>
                  id="media_upload_<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Select Images' ); ?></div>
 
-            ?>
             <script>
                 jQuery(document).ready(function ($) {
 
@@ -400,7 +399,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
                 #media_preview_<?php echo $id; ?> > div {
                     display: inline-block;
                     vertical-align: top;
-                    width: 180px;
+                    width: 100px;
                     border: 1px solid #ddd;
                     padding: 12px;
                     margin: 0 10px 10px 0;
@@ -1154,6 +1153,8 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 
 				do_action( $this->get_current_page() );
 
+				do_action( 'pb_settings_' . $this->get_menu_slug() );
+
 				do_action( 'pb_settings_after_page_' . $this->get_current_page() );
 				?>
             </div>
@@ -1383,9 +1384,11 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 * @return bool
 		 */
 		private function show_submit_button() {
-			return isset( $this->get_pages()[ $this->get_current_page() ]['show_submit'] )
+			$show_submit = isset( $this->get_pages()[ $this->get_current_page() ]['show_submit'] )
 				? $this->get_pages()[ $this->get_current_page() ]['show_submit']
 				: true;
+
+			return isset( $this->data['show_submit'] ) && ! $this->data['show_submit'] ? $this->data['show_submit'] : $show_submit;
 		}
 
 
