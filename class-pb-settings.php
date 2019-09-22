@@ -115,6 +115,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			$singular = isset( $args['singular'] ) ? $args['singular'] : '';
 			$plural   = isset( $args['plural'] ) ? $args['plural'] : '';
 			$labels   = isset( $args['labels'] ) ? $args['labels'] : array();
+			$rewrite  = isset( $args['rewrite'] ) ? $args['rewrite'] : array();
 
 			$args = array_merge( array(
 				'description'         => sprintf( __( 'This is where you can create and manage %s.' ), $plural ),
@@ -150,6 +151,9 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				'not_found_in_trash' => sprintf( __( 'No %s found in trash' ), $plural ),
 				'parent'             => sprintf( __( 'Parent %s' ), $singular ),
 			), $labels );
+
+			$args['rewrite'] = array_merge( array( 'slug' => $post_type ), $rewrite );
+
 
 			register_post_type( $post_type, apply_filters( "pb_register_post_type_$post_type", $args ) );
 		}
@@ -653,6 +657,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			$autocomplete  = isset( $option['autocomplete'] ) ? $option['autocomplete'] : "off";
 			$value         = isset( $option['value'] ) ? $option['value'] : get_option( $id );
 			$disabled      = isset( $option['disabled'] ) && $option['disabled'] ? 'disabled' : '';
+			$load_ui       = isset( $option['load_ui'] ) ? $option['load_ui'] : true;
 			$field_options = isset( $option['field_options'] ) ? $option['field_options'] : array();
 			$field_options = preg_replace( '/"([^"]+)"\s*:\s*/', '$1:', json_encode( $field_options ) );
 			$field_id      = str_replace( array( '[', ']' ), '', $id );
@@ -661,7 +666,9 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				$value = isset( $option['default'] ) ? $option['default'] : $value;
 			}
 
-			wp_enqueue_style( 'jquery-ui', '//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css' );
+			if ( $load_ui ) {
+				wp_enqueue_style( 'jquery-ui', '//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css' );
+			}
 			wp_enqueue_script( 'jquery-ui-datepicker' );
 
 			?>
