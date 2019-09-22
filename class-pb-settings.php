@@ -943,7 +943,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				foreach ( $args as $key => $val ) {
 
 					$checked = is_array( $value ) && in_array( $key, $value ) ? "checked" : "";
-					printf( '<label for="%1$s_%2$s"><input %3$s %4$s type="checkbox" id="%1$s_%2$s" name="%1$s[]" value="%2$s">%5$s</label><br>',
+					printf( '<label for="%1$s_%2$s"><input %3$s %4$s type="checkbox" id="%1$s_%2$s" name="%1$s[]" value="%2$s"><span>%5$s</span></label><br>',
 						$id, $key, $disabled, $checked, $val
 					);
 				}
@@ -975,7 +975,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				<?php
 				foreach ( $args as $key => $val ) {
 					$checked = is_array( $value ) && in_array( $key, $value ) ? "checked" : "";
-					printf( '<label><input %1$s %2$s type="radio" name="%3$s[]" value="%4$s">%5$s</label><br>',
+					printf( '<label><input %1$s %2$s type="radio" name="%3$s[]" value="%4$s"><span>%5$s</span></label><br>',
 						$disabled, $checked, $option_id, $key, $val
 					);
 				}
