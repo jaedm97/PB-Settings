@@ -2,28 +2,25 @@
 /**
  * PB Settings
  *
- * Quick settings page generator for WordPress
+ * Quick settings page generator for WordPress with many more features
  *
+ * @version 3.3.1
  * @package PB_Settings
- * @version 3.0.5
  * @author Pluginbazar
  * @copyright 2019 Pluginbazar.com
  * @see https://github.com/jaedm97/PB-Settings
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}  // if direct access
-
+defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'PB_Settings' ) ) {
 	class PB_Settings {
 
 		public $data = array();
-		public $disabled_notice = null;
 
 		private $options = array();
 		private $checked = array();
+
 
 		/**
 		 * PB_Settings constructor.
@@ -38,11 +35,99 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				add_action( 'admin_menu', array( $this, 'add_menu_in_admin_menu' ), 12 );
 			}
 
-			$this->disabled_notice = $this->get_disabled_notice();
 			$this->set_options();
 
 			add_action( 'admin_init', array( $this, 'display_fields' ), 12 );
+			add_action( 'admin_notices', array( $this, 'required_plugin_check' ) );
+
 			add_filter( 'whitelist_options', array( $this, 'whitelist_options' ), 99, 1 );
+		}
+
+
+		/**
+		 * Render License warning
+		 */
+		function render_license_warning() {
+			printf( '<div class="notice notice-error"><p>You must activate <strong>%s</strong>. Don\'t have your key? <a href="%s" target="_blank">Get Now</a></p><p><a class="button-primary" href="%s">Activate License</a></p></div>',
+				$this->get_data( 'plugin_name' ), $this->get_data( 'license_url' ), $this->get_data( 'license_page' )
+			);
+		}
+
+
+		/**
+		 * Check if any plugin require to work the current plugin
+		 *
+		 * Required arguments in the initializer
+		 *
+		 * @arg string plugin_name | Current plugin name
+		 * @arg array required_plugins | array of required plugins with key as the plugin slug and value as the plugin name or label
+		 */
+		function required_plugin_check() {
+
+			$buttons = array();
+			$plugins = array();
+
+			foreach ( $this->get_data( 'required_plugins', array() ) as $plugin_slug => $label ) {
+
+				$this_plugin = sprintf( '%1$s/%1$s.php', $plugin_slug );
+				$plugins[]   = sprintf( '<strong>%s</strong>', $label );
+
+				if ( is_plugin_active( $this_plugin ) ) {
+					continue;
+				}
+
+				if ( $this->is_plugin_installed( $this_plugin ) ) {
+
+					$button_url = wp_nonce_url( 'plugins.php?action=activate&amp;plugin=' . $this_plugin . '&amp;plugin_status=all&amp;paged=1&amp;s', 'activate-plugin_' . $this_plugin );
+					$buttons[]  = sprintf( '<a class="button-primary" href="%s">%s</a>', $button_url, sprintf( esc_html( 'Activate %s' ), $label ) );
+				} else {
+					$button_url = wp_nonce_url( self_admin_url( 'update.php?action=install-plugin&plugin=' . $plugin_slug ), 'install-plugin_' . $plugin_slug );
+					$buttons[]  = sprintf( '<a class="button-primary" href="%s">%s</a>', $button_url, sprintf( esc_html( 'Install %s' ), $label ) );
+				}
+			}
+
+			if ( count( $buttons ) > 0 ) {
+				printf( '<div class="notice notice-error is-dismissible"><p>%s</p><p>%s</p></div>',
+					sprintf( __( '<strong>%s</strong> plugin requires plugin(s): %s to be installed and activated. Please continue with installation or activation', 'woc-open-close' ),
+						$this->get_data( 'plugin_name' ), implode( ', ', $plugins ), '<strong>', '</strong>'
+					),
+					implode( ' ', $buttons )
+				);
+			}
+		}
+
+
+		/**
+		 * Check if a plugin installed in the plugins list or not
+		 *
+		 * @param $basename
+		 *
+		 * @return bool
+		 */
+		function is_plugin_installed( $basename ) {
+			if ( ! function_exists( 'get_plugins' ) ) {
+				include_once ABSPATH . '/wp-admin/includes/plugin.php';
+			}
+
+			$installed_plugins = get_plugins();
+
+			return isset( $installed_plugins[ $basename ] );
+		}
+
+
+		/**
+		 * Register Shortcode
+		 *
+		 * @param string $shortcode
+		 * @param string $callable_func
+		 */
+		function register_shortcode( $shortcode = '', $callable_func = '' ) {
+
+			if ( empty( $shortcode ) || ! $shortcode || ! $callable_func || empty( $callable_func ) ) {
+				return;
+			}
+
+			add_shortcode( $shortcode, $callable_func );
 		}
 
 
@@ -50,10 +135,10 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 * Register Taxonomy
 		 *
 		 * @param $tax_name
-		 * @param $obj_name
+		 * @param $obj_type
 		 * @param array $args
 		 */
-		function register_taxonomy( $tax_name, $obj_name, $args = array() ) {
+		function register_taxonomy( $tax_name, $obj_type, $args = array() ) {
 
 			if ( taxonomy_exists( $tax_name ) ) {
 				return;
@@ -64,7 +149,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			$labels   = isset( $args['labels'] ) ? $args['labels'] : array();
 
 			$args = array_merge( array(
-				'description'         => sprintf( __( 'This is where you can create and manage %s.', 'wp-poll' ), $plural ),
+				'description'         => sprintf( __( 'This is where you can create and manage %s.' ), $plural ),
 				'public'              => true,
 				'show_ui'             => true,
 				'capability_type'     => 'post',
@@ -79,24 +164,24 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			), $args );
 
 			$args['labels'] = array_merge( array(
-				'name'               => sprintf( __( '%s', 'wp-poll' ), $plural ),
+				'name'               => sprintf( __( '%s' ), $plural ),
 				'singular_name'      => $singular,
-				'menu_name'          => __( $singular, 'wp-poll' ),
-				'all_items'          => sprintf( __( '%s', 'wp-poll' ), $plural ),
-				'add_new'            => sprintf( __( 'Add %s', 'wp-poll' ), $singular ),
-				'add_new_item'       => sprintf( __( 'Add %s', 'wp-poll' ), $singular ),
-				'edit'               => __( 'Edit', 'wp-poll' ),
-				'edit_item'          => sprintf( __( '%s Details', 'wp-poll' ), $singular ),
-				'new_item'           => sprintf( __( 'New %s', 'wp-poll' ), $singular ),
-				'view'               => sprintf( __( 'View %s', 'wp-poll' ), $singular ),
-				'view_item'          => sprintf( __( 'View %s', 'wp-poll' ), $singular ),
-				'search_items'       => sprintf( __( 'Search %s', 'wp-poll' ), $plural ),
-				'not_found'          => sprintf( __( 'No %s found', 'wp-poll' ), $plural ),
-				'not_found_in_trash' => sprintf( __( 'No %s found in trash', 'wp-poll' ), $plural ),
-				'parent'             => sprintf( __( 'Parent %s', 'wp-poll' ), $singular ),
+				'menu_name'          => __( $plural ),
+				'all_items'          => sprintf( __( '%s' ), $plural ),
+				'add_new'            => sprintf( __( 'Add %s' ), $singular ),
+				'add_new_item'       => sprintf( __( 'Add %s' ), $singular ),
+				'edit'               => __( 'Edit' ),
+				'edit_item'          => sprintf( __( '%s Details' ), $singular ),
+				'new_item'           => sprintf( __( 'New %s' ), $singular ),
+				'view'               => sprintf( __( 'View %s' ), $singular ),
+				'view_item'          => sprintf( __( 'View %s' ), $singular ),
+				'search_items'       => sprintf( __( 'Search %s' ), $plural ),
+				'not_found'          => sprintf( __( 'No %s found' ), $plural ),
+				'not_found_in_trash' => sprintf( __( 'No %s found in trash' ), $plural ),
+				'parent'             => sprintf( __( 'Parent %s' ), $singular ),
 			), $labels );
 
-			register_taxonomy( $tax_name, $obj_name, apply_filters( "pb_register_taxonomy_$tax_name", $args, $obj_name ) );
+			register_taxonomy( $tax_name, $obj_type, apply_filters( "pb_register_taxonomy_$tax_name", $args, $obj_type ) );
 		}
 
 
@@ -115,7 +200,6 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			$singular = isset( $args['singular'] ) ? $args['singular'] : '';
 			$plural   = isset( $args['plural'] ) ? $args['plural'] : '';
 			$labels   = isset( $args['labels'] ) ? $args['labels'] : array();
-			$rewrite  = isset( $args['rewrite'] ) ? $args['rewrite'] : array();
 
 			$args = array_merge( array(
 				'description'         => sprintf( __( 'This is where you can create and manage %s.' ), $plural ),
@@ -151,9 +235,6 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				'not_found_in_trash' => sprintf( __( 'No %s found in trash' ), $plural ),
 				'parent'             => sprintf( __( 'Parent %s' ), $singular ),
 			), $labels );
-
-			$args['rewrite'] = array_merge( array( 'slug' => $post_type ), $rewrite );
-
 
 			register_post_type( $post_type, apply_filters( "pb_register_post_type_$post_type", $args ) );
 		}
@@ -316,8 +397,8 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				}
 			}
 
-			if ( isset( $option['disabled'] ) && $option['disabled'] && ! empty( $this->disabled_notice ) ) {
-				printf( '<span class="disabled-notice" style="background: #ffe390eb;margin-left: 10px;padding: 5px 12px;font-size: 12px;border-radius: 3px;color: #717171;">%s</span>', $this->disabled_notice );
+			if ( isset( $option['disabled'] ) && $option['disabled'] && ! empty( $this->get_disabled_notice() ) ) {
+				printf( '<span class="disabled-notice" style="background: #ffe390eb;margin-left: 10px;padding: 5px 12px;font-size: 12px;border-radius: 3px;color: #717171;">%s</span>', $this->get_disabled_notice() );
 			}
 
 			do_action( "pb_settings_before_option", $option );
@@ -367,11 +448,12 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 
 			?>
             <div id="media_preview_<?php echo esc_attr( $id ); ?>">
-				<?php echo $html; ?>
+				<?php echo esc_html( $html ); ?>
             </div>
             <div class='button' <?php echo esc_attr( $disabled ); ?>
                  id="media_upload_<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Select Images' ); ?></div>
 
+            ?>
             <script>
                 jQuery(document).ready(function ($) {
 
@@ -403,7 +485,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
                 #media_preview_<?php echo $id; ?> > div {
                     display: inline-block;
                     vertical-align: top;
-                    width: 100px;
+                    width: 180px;
                     border: 1px solid #ddd;
                     padding: 12px;
                     margin: 0 10px 10px 0;
@@ -657,7 +739,6 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			$autocomplete  = isset( $option['autocomplete'] ) ? $option['autocomplete'] : "off";
 			$value         = isset( $option['value'] ) ? $option['value'] : get_option( $id );
 			$disabled      = isset( $option['disabled'] ) && $option['disabled'] ? 'disabled' : '';
-			$load_ui       = isset( $option['load_ui'] ) ? $option['load_ui'] : true;
 			$field_options = isset( $option['field_options'] ) ? $option['field_options'] : array();
 			$field_options = preg_replace( '/"([^"]+)"\s*:\s*/', '$1:', json_encode( $field_options ) );
 			$field_id      = str_replace( array( '[', ']' ), '', $id );
@@ -666,9 +747,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				$value = isset( $option['default'] ) ? $option['default'] : $value;
 			}
 
-			if ( $load_ui ) {
-				wp_enqueue_style( 'jquery-ui', '//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css' );
-			}
+			wp_enqueue_style( 'jquery-ui', '//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css' );
 			wp_enqueue_script( 'jquery-ui-datepicker' );
 
 			?>
@@ -889,7 +968,6 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		function generate_select( $option ) {
 
 			$id       = isset( $option['id'] ) ? $option['id'] : "";
-			$field_id = str_replace( array( '[', ']' ), '_', $id );
 			$args     = isset( $option['args'] ) ? $option['args'] : array();
 			$args     = is_array( $args ) ? $args : $this->generate_args_from_string( $args, $option );
 			$value    = isset( $option['value'] ) ? $option['value'] : get_option( $id );
@@ -904,7 +982,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			?>
             <select <?php echo esc_attr( $disabled ); ?> <?php echo esc_attr( $required ); ?>
                     name="<?php echo esc_attr( $id ); ?>"
-                    id="<?php echo esc_attr( $field_id ); ?>">
+                    id="<?php echo esc_attr( $id ); ?>">
 
 				<?php
 
@@ -932,24 +1010,21 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			$args     = is_array( $args ) ? $args : $this->generate_args_from_string( $args, $option );
 			$value    = isset( $option['value'] ) ? $option['value'] : get_option( $id );
 			$disabled = isset( $option['disabled'] ) && $option['disabled'] ? 'disabled' : '';
+			$cb_items = array();
 
 			if ( empty( $value ) || ! $value ) {
 				$value = isset( $option['default'] ) ? $option['default'] : $value;
 			}
 
-			?>
-            <fieldset>
-				<?php
-				foreach ( $args as $key => $val ) {
+			foreach ( $args as $key => $val ) {
 
-					$checked = is_array( $value ) && in_array( $key, $value ) ? "checked" : "";
-					printf( '<label for="%1$s_%2$s"><input %3$s %4$s type="checkbox" id="%1$s_%2$s" name="%1$s[]" value="%2$s"><span>%5$s</span></label><br>',
-						$id, $key, $disabled, $checked, $val
-					);
-				}
-				?>
-            </fieldset>
-			<?php
+				$checked    = is_array( $value ) && in_array( $key, $value ) ? "checked" : "";
+				$cb_items[] = sprintf( '<label for="%1$s_%2$s"><input %3$s %4$s type="checkbox" id="%1$s_%2$s" name="%1$s[]" value="%2$s">%5$s</label>',
+					$id, $key, $disabled, $checked, $val
+				);
+			}
+
+			printf( '<fieldset>%s</fieldset>', implode( '<br>', $cb_items ) );
 		}
 
 
@@ -975,7 +1050,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 				<?php
 				foreach ( $args as $key => $val ) {
 					$checked = is_array( $value ) && in_array( $key, $value ) ? "checked" : "";
-					printf( '<label><input %1$s %2$s type="radio" name="%3$s[]" value="%4$s"><span>%5$s</span></label><br>',
+					printf( '<label><input %1$s %2$s type="radio" name="%3$s[]" value="%4$s">%5$s</label><br>',
 						$disabled, $checked, $option_id, $key, $val
 					);
 				}
@@ -1120,51 +1195,57 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 */
 		function display_function() {
 
-			global $pagenow;
-			parse_str( $_SERVER['QUERY_STRING'], $nav_url_args );
-
-			$tab_count = 0;
-
 			?>
             <div class="wrap">
                 <h2><?php echo esc_html( $this->get_menu_page_title() ); ?></h2><br>
 
-				<?php settings_errors(); ?>
-
-                <nav class="nav-tab-wrapper">
-					<?php
-					foreach ( $this->get_pages() as $page_id => $page ) {
-
-						$tab_count ++;
-
-						$active              = $this->get_current_page() == $page_id ? 'nav-tab-active' : '';
-						$nav_url_args['tab'] = $page_id;
-						$nav_menu_url        = http_build_query( $nav_url_args );
-						$page_nav            = isset( $page['page_nav'] ) ? $page['page_nav'] : '';
-
-						printf( '<a href="%s?%s" class="nav-tab %s">%s</a>', $pagenow, $nav_menu_url, $active, $page_nav );
-					}
-					?>
-                </nav>
-
 				<?php
-				do_action( 'pb_settings_before_page_' . $this->get_current_page() );
+				settings_errors();
+
+				do_action( 'pb_settings_before_page_' . $this->get_current_page(), $this );
+
+				$this->get_settings_nav_tab();
 
 				if ( $this->show_submit_button() ) {
-					printf( '<form class="pb_settings_form" action="options.php" method="post">%s%s</form>',
-						$this->get_settings_fields_html(), get_submit_button()
-					);
+					printf( '<form class="pb_settings_form" action="options.php" method="post">%s%s</form>', $this->get_settings_fields_html(), get_submit_button() );
 				} else {
 					print( $this->get_settings_fields_html() );
 				}
 
-				do_action( $this->get_current_page() );
+				do_action( $this->get_current_page(), $this );
 
-				do_action( 'pb_settings_' . $this->get_menu_slug() );
-
-				do_action( 'pb_settings_after_page_' . $this->get_current_page() );
+				do_action( 'pb_settings_after_page_' . $this->get_current_page(), $this );
 				?>
             </div>
+			<?php
+		}
+
+
+		/**
+		 * Return settings navigation tabs
+		 */
+		function get_settings_nav_tab() {
+
+			global $pagenow;
+
+			parse_str( $_SERVER['QUERY_STRING'], $nav_url_args );
+
+			?>
+            <nav class="nav-tab-wrapper">
+				<?php
+				foreach ( $this->get_pages() as $page_id => $page ) {
+
+					$active              = $this->get_current_page() == $page_id ? 'nav-tab-active' : '';
+					$nav_url_args['tab'] = $page_id;
+					$nav_menu_url        = http_build_query( $nav_url_args );
+					$page_nav            = isset( $page['page_nav'] ) ? $page['page_nav'] : '';
+
+					printf( '<a href="%s?%s" class="nav-tab %s">%s</a>', $pagenow, $nav_menu_url, $active, $page_nav );
+				}
+
+				do_action( 'pb_settings_after_nav_tab' );
+				?>
+            </nav>
 			<?php
 		}
 
@@ -1391,11 +1472,9 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		 * @return bool
 		 */
 		private function show_submit_button() {
-			$show_submit = isset( $this->get_pages()[ $this->get_current_page() ]['show_submit'] )
+			return isset( $this->get_pages()[ $this->get_current_page() ]['show_submit'] )
 				? $this->get_pages()[ $this->get_current_page() ]['show_submit']
 				: true;
-
-			return isset( $this->data['show_submit'] ) && ! $this->data['show_submit'] ? $this->data['show_submit'] : $show_submit;
 		}
 
 
@@ -1631,7 +1710,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 		function get_option_value( $option_id = false, $default = '' ) {
 
 			if ( ! $option_id || empty( $option_id ) ) {
-				return false;
+				returnfalse;
 			}
 
 			$option = array();
@@ -1661,6 +1740,28 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			}
 
 			return apply_filters( 'pb_settings_option_value', $option_value, $option_id, $option );
+		}
+
+		/**
+		 * Return data using key from args
+		 *
+		 * @param string $key
+		 * @param string $default
+		 * @param array $args
+		 *
+		 * @return mixed|string
+		 */
+		private function get_data( $key = '', $default = '', $args = array() ) {
+
+			$args    = empty( $args ) ? $this->data : $args;
+			$default = empty( $default ) ? is_array( $default ) ? array() : '' : $default;
+			$key     = empty( $key ) ? '' : $key;
+
+			if ( isset( $args[ $key ] ) && ! empty( $args[ $key ] ) ) {
+				return $args[ $key ];
+			}
+
+			return $default;
 		}
 	}
 }
