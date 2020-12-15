@@ -2,10 +2,10 @@
 /**
  * PB Settings
  *
- * Quick settings page generator for WordPress with many more features
+ * Quick settings page generator for WordPress
  *
- * @version 3.3.1
  * @package PB_Settings
+ * @version 3.3.2
  * @author Pluginbazar
  * @copyright 2019 Pluginbazar.com
  * @see https://github.com/jaedm97/PB-Settings
@@ -41,16 +41,6 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			add_action( 'admin_notices', array( $this, 'required_plugin_check' ) );
 
 			add_filter( 'whitelist_options', array( $this, 'whitelist_options' ), 99, 1 );
-		}
-
-
-		/**
-		 * Render License warning
-		 */
-		function render_license_warning() {
-			printf( '<div class="notice notice-error"><p>You must activate <strong>%s</strong>. Don\'t have your key? <a href="%s" target="_blank">Get Now</a></p><p><a class="button-primary" href="%s">Activate License</a></p></div>',
-				$this->get_data( 'plugin_name' ), $this->get_data( 'license_url' ), $this->get_data( 'license_page' )
-			);
 		}
 
 
@@ -166,7 +156,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 			$args['labels'] = array_merge( array(
 				'name'               => sprintf( __( '%s' ), $plural ),
 				'singular_name'      => $singular,
-				'menu_name'          => __( $plural ),
+				'menu_name'          => __( $singular ),
 				'all_items'          => sprintf( __( '%s' ), $plural ),
 				'add_new'            => sprintf( __( 'Add %s' ), $singular ),
 				'add_new_item'       => sprintf( __( 'Add %s' ), $singular ),
@@ -306,6 +296,8 @@ if ( ! class_exists( 'PB_Settings' ) ) {
 
 						if ( $option_id == 'post_title' ) {
 							$option['value'] = $post->post_title != 'Auto Draft' ? $post->post_title : '';
+						} else if ( $option_id == 'post_name' ) {
+							$option['value'] = $post->post_name;
 						} else if ( $option_id == 'content' ) {
 							$option['value'] = $post->post_content;
 						} else {
@@ -1096,7 +1088,7 @@ if ( ! class_exists( 'PB_Settings' ) ) {
                 <style>
                     .image-select > label {
                         display: inline-block;
-                        width: 120px;
+                        width: 48px;
                         margin: 0 15px 15px 0;
                         position: relative;
                         border: 1px solid #d1d1d1;
@@ -1106,15 +1098,16 @@ if ( ! class_exists( 'PB_Settings' ) ) {
                     .image-select > label.checked:after {
                         content: '✔';
                         position: absolute;
-                        width: 30px;
-                        height: 30px;
+                        width: 18px;
+                        height: 18px;
                         background: #4CAF50;
                         color: #fff;
                         top: -10px;
                         right: -10px;
                         border-radius: 50%;
                         text-align: center;
-                        line-height: 30px;
+                        line-height: 18px;
+                        font-size: 10px;
                     }
 
                     .image-select > label > input[type="radio"],
